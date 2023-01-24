@@ -59,6 +59,8 @@ if __name__ == '__main__':
         folders = [f for f in folderfile if os.path.isdir(os.path.join(inputRCPath, f))]
         print(folders)
 
+        stpage = 272
+        edpage = 272
         # CT = CheckTool()
         if len(folders) > 0:
             for folder in folders:
@@ -71,7 +73,7 @@ if __name__ == '__main__':
                         if not "検出結果" in file:
                             # if CT.RCCheck(file,limit=0.70,stpage=30,edpage=200):
                             funcName = "CT."+Calcname[1]
-                            if eval(funcName)(file, limit=0.70, stpage=20, edpage=0):
+                            if eval(funcName)(file, limit=0.70, stpage=stpage, edpage=edpage):
                                 if not os.path.isdir(path2 + "/" + folder):
                                     new_path = shutil.move(path1, path2)
                                 else:
