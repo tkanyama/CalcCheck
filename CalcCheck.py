@@ -9,7 +9,7 @@ from CheckTool import CheckTool
 
 if __name__ == '__main__':
 
-    CalcNames = [["RC造", "RCCheck"], ["S造", "RCCheck"], ["SRC造", "RCCheck"]]
+    CalcNames = [["RC造", "RC_Check"], ["S造", "S_Check"], ["SRC造", "SRC_Check"]]
     initFile = "init.json"
     if not os.path.isfile(initFile):
         dir = os.getcwd()
@@ -71,7 +71,7 @@ if __name__ == '__main__':
                         if not "検出結果" in file:
                             # if CT.RCCheck(file,limit=0.70,stpage=30,edpage=200):
                             funcName = "CT."+Calcname[1]
-                            if eval(funcName)(file, limit=0.70, stpage=30, edpage=200):
+                            if eval(funcName)(file, limit=0.70, stpage=20, edpage=0):
                                 if not os.path.isdir(path2 + "/" + folder):
                                     new_path = shutil.move(path1, path2)
                                 else:

@@ -52,8 +52,16 @@ def isint(s):
     else:
         return True
 
-
+#==================================================================================
+#   構造計算書の数値検出ツールのClass
+#       
+#       Coded by kanyama (2022/01)
+#==================================================================================
 class CheckTool():
+    #==================================================================================
+    #   オブジェクトのインスタンス化および初期化
+    #==================================================================================
+    
     def __init__(self):
         # 源真ゴシック等幅フォント
         GEN_SHIN_GOTHIC_MEDIUM_TTF = "/Library/Fonts/GenShinGothic-Monospace-Medium.ttf"
@@ -87,7 +95,11 @@ class CheckTool():
         # self.pdf_file = FileName
         # self.pdf_out_file = os.path.splitext(self.pdfFileName)[0] + '[検出結果].pdf'
 
-    def RCCheck(self,FileName , limit = 0.95, stpage = 0 , edpage=0):
+    #==================================================================================
+    #   RC造用の関数
+    #==================================================================================
+
+    def RC_Check(self,FileName , limit = 0.95, stpage = 0 , edpage=0):
         if not os.path.isfile(FileName):
             print('ファイルがありません！！')
             return False
@@ -116,14 +128,8 @@ class CheckTool():
         resourceManager = PDFResourceManager()
         device = PDFPageAggregator(resourceManager, laparams=LAParams())
 
-        if stpage == 0 :      # 検索を開始する最初のページ
-            startpage = 0
-        else:
-            startpage = stpage
-        if edpage == 0:  # 検索を終了する最後のページ
-            endpage = PageMax 
-        else:
-            endpage = edpage
+        startpage = 30      # 検索を開始する最初のページ
+        endpage = PageMax   # 検索を終了する最後のページ
 
         pageResultData = []
         # pageText = []
@@ -363,14 +369,13 @@ class CheckTool():
 
             if pageN == 1:
                 cc.setFillColor("red")
-                # font_name = "ipaexg"
-                font_name = self.fontname2
+                font_name = "ipaexg"
                 cc.setFont(font_name, 20)
                 cc.drawString(20 * mm,  pageSizeY - 40 * mm, "検定比（{}以上）の検索結果".format(limit1))
             else:
                 pn = len(ResultData)
                 cc.setFillColor("red")
-                font_name = self.fontname2
+                font_name = "ipaexg"
                 cc.setFont(font_name, 12)
                 t2 = "検索個数 = {}".format(pn)
                 cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
@@ -390,7 +395,7 @@ class CheckTool():
 
                     if flag:
                         cc.setFillColor("red")
-                        font_name = self.fontname2
+                        font_name = "ipaexg"
                         cc.setFont(font_name, 7)
                         t2 = " {:.2f}".format(a)
                         cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
@@ -401,5 +406,18 @@ class CheckTool():
         # PDFの保存
         cc.save()
         return True
-        # t1 = time.time() - time_sta
-        # print("time = {} sec".format(t1))
+
+
+    #==================================================================================
+    #   SRC造用の関数
+    #==================================================================================
+
+    def SRC_Check(self,FileName , limit = 0.95, stpage = 0 , edpage=0):
+        a=0
+
+    #==================================================================================
+    #   S造用の関数
+    #==================================================================================
+
+    def S_Check(self,FileName , limit = 0.95, stpage = 0 , edpage=0):
+        a=0
