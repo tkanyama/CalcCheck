@@ -29,6 +29,7 @@ import json
 
 from tkinter import filedialog
 import numpy as np
+import math
 
 #============================================================================
 #  浮動小数点数値を表しているかどうかを判定する関数
@@ -105,9 +106,14 @@ class CheckTool():
         for lt in layout:
             if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
-                # if lt.x0 >= page_xmax/2.0:  # ページの右半分の文字だけを取得
-                CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1])
-
+                m1 = lt.matrix
+                if m1[1] == 0.0 :  # 回転していない文字のみを抽出
+                    CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                # elif m1[1] > 0.0 :
+                #     CharDataPlus.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                # elif m1[1] <0.0 :
+                #     CharDataMinus.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                
         # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
         CharData2=[]
         CY = []
@@ -153,7 +159,7 @@ class CheckTool():
                 CharData4.append(Fline)
 
             # 次にX座標の順番にデータを並び替える（昇順）
-            t1 = []
+            outtext1 = []
             CharOutPut1 = []
             for F1 in CharData4:    # Y座標が同じデータを抜き出す。                        
                 CX = []         # 各データのX座標のデータリストを作成
@@ -171,16 +177,155 @@ class CheckTool():
                     t3 = F1[x[i]][0]
                     t2 += t3
                 # t1 += t2 + "\n"
-                t1.append([t2])
+                outtext1.append([t2])
                 # print(t2,len(F3))
                 CharOutPut1.append(F3)
         
 
+        CharData2 = []
+        for lt in layout:
+            if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
+                char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
+                if lt.matrix[1] > 0.0 : # 正の回転している文字のみを抽出
+                    CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+        for lt in layout:
+            if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
+                char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
+                if lt.matrix[1] < 0.0 : # 正の回転している文字のみを抽出
+                    CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+        # CharData2 = CharDataPlus
+        outtext2 = []
+        CharOutPut2 = []
+        fline = []
+        Sflag = False
+        tt2 = ""
+        # for F1 in CharData:
+        #     if not Sflag:
+        #         if F1[0] != " ":
+        #             fline.append(F1)
+        #             tt2 += F1[0]
+        #             Sflag = True
+        #         # else:
+        #         #     Sflag = True
+        #         #     continue
+        #     else:
+        #         if F1[0] == " ":
+        #             CharOutPut2.append(fline)
+        #             outtext2.append([tt2])
+        #             fline = []
+        #             tt2 = ""
+        #             Sflag = False
+        #         else:
+        #             fline.append(F1)
+        #             tt2 += F1[0]
+
+        # if len(fline)>0:
+        #     CharOutPut2.append(fline)
+        #     outtext2.append([tt2])
+
+        fline = []
+        Sflag = False
+        tt2 = ""
+        for F1 in CharData2:
+            if not Sflag:
+                if F1[0] != " ":
+                    fline.append(F1)
+                    tt2 += F1[0]
+                    Sflag = True
+                # else:
+                #     Sflag = True
+                #     continue
+            else:
+                if F1[0] == " ":
+                    CharOutPut2.append(fline)
+                    outtext2.append([tt2])
+                    fline = []
+                    tt2 = ""
+                    Sflag = False
+                else:
+                    fline.append(F1)
+                    tt2 += F1[0]
+
+        if len(fline)>0:
+            CharOutPut2.append(fline)
+            outtext2.append([tt2])
+
+        
 
 
+        # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
+        # CharData2=[]
+        # CY = []
+        # for cdata in CharData:
+        #     char2 = cdata[0]
+        #     x0 = cdata[1]
+        #     x1 = cdata[2]
+        #     y0 = cdata[3]
+        #     y1 = cdata[4]
+            
+        #     CharData2.append(cdata)
+        #     CY.append(int(y0))
+        
+        # # リスト「CY」から降順の並び替えインデックッスを取得
+        # y=np.argsort(np.array(CY))[::-1]
+
+        # if len(CharData2) > 0:  # リストが空でない場合に処理を行う
+        #     CharData3 = []
+        #     # インデックスを用いて並べ替えた「CharData3」を作成
+        #     for i in range(len(y)):
+        #         CharData3.append(CharData2[y[i]])
+
+        #     # 同じ高さのY座標毎にデータをまとめる２次元のリストを作成
+        #     CharData4 = []
+        #     i = 0
+        #     for f in CharData3:
+        #         if i==0 :   # 最初の文字のY座標を基準値に採用し、仮のリストを初期化
+        #             Fline = []
+        #             Fline.append(f)
+        #             gy0 = int(f[3])
+        #             gy1 = int(f[4])
+        #         else:
+        #             if int(f[4])>= gy0 and int(f[4])<= gy1:   # 同じY座標の場合は、リストに文字を追加
+        #                 Fline.append(f)
+        #             else:           # Y座標が異なる場合は、リストを「CharData4」を保存し、仮のリストを初期化
+        #                 if len(Fline) >= 4:
+        #                     CharData4.append(Fline)
+        #                 Fline = []
+        #                 Fline.append(f)
+        #                 gy0 = int(f[3])
+        #                 gy1 = int(f[4])
+
+        #         i += 1
+        #     # 仮のリストが残っている場合は、リストを「CharData4」を保存
+        #     if len(Fline) >= 4:
+        #         CharData4.append(Fline)
+
+        #     # 次にX座標の順番にデータを並び替える（昇順）
+        #     t1 = []
+        #     CharOutPut2 = []
+        #     for F1 in CharData4:    # Y座標が同じデータを抜き出す。                        
+        #         CX = []         # 各データのX座標のデータリストを作成
+        #         for F2 in F1:
+        #             CX.append(F2[1])
+                
+        #         # リスト「CX」から降順の並び替えインデックッスを取得
+        #         x=np.argsort(np.array(CX))
+                
+        #         # インデックスを用いて並べ替えた「F3」を作成
+        #         F3 = []
+        #         t2 = ""
+        #         for i in range(len(x)):
+        #             F3.append(F1[x[i]])
+        #             t3 = F1[x[i]][0]
+        #             t2 += t3
+        #         # t1 += t2 + "\n"
+        #         t1.append([t2])
+        #         # print(t2,len(F3))
+        #         CharOutPut2.append(F3)
 
 
-        return t1 , CharOutPut1
+        
+        return outtext1 , CharOutPut1, outtext2, CharOutPut2
 
 
 
@@ -275,7 +420,7 @@ class CheckTool():
                     杭_Flag = False
                     検定比図_Flag = False
 
-                    xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
+                    xd = 0      #  X座標の左右に加える余白のサイズ（ポイント）を設定
 
                     mode = ""
                     for lt in layout:
@@ -318,14 +463,14 @@ class CheckTool():
                     
                     if mode == "検定比図" :
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData1, outtext2 ,CharData2 = self.MakeChar(page, interpreter2,device2)
 
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             i = -1
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
-                                CharLine = CharData5[i] # １行文のデータを読み込む
+                                CharLine = CharData1[i] # １行文のデータを読み込む
                                 
                                 # if "検定比" in t3 : # 「検定比」が現れた場合の処理
                                 # print(t3)
@@ -356,7 +501,13 @@ class CheckTool():
                                                     xxx1 += xd
                                                 width3 = xxx1 - xxx0
                                                 height3 = yyy1 - yyy0
-                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+
+                                                points = []
+                                                points.append((xxx0,yyy0,xxx1,yyy0))
+                                                points.append((xxx1,yyy0,xxx1,yyy1))
+                                                points.append((xxx1,yyy1,xxx0,yyy1))
+                                                points.append((xxx0,yyy1,xxx0,yyy0))
+                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
                                                 flag = True
                                                 pageFlag = True
                                                 val = a
@@ -365,16 +516,143 @@ class CheckTool():
                                         # 数値を検索を開始するを文字数分移動
                                         st = nn + ln + 1
                             
-                                    
+                        if len(outtext2) > 0:
+                            i = -1
+                            for line in outtext2:
+                                i += 1
+                                t3 = line[0]
+                                CharLine = CharData2[i] # １行文のデータを読み込む
+                                
+                                # if "検定比" in t3 : # 「検定比」が現れた場合の処理
+                                # print(t3)
+                                st = 0
+                                t4 = t3.split()            # 文字列を空白で分割
+                                if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
+                                    for t5 in t4:
+                                        t6 = t5.replace("(","").replace(")","").replace(" ","").replace("組","")    # 「検定比」と数値が一緒の場合は除去
+                                        nn = t3.find(t6,st)   # 数値の文字位置を検索
+                                        ln = len(t6)
+
+                                        # カッコがある場合は左右１文字ずつ追加
+                                        if "(" in t5:
+                                            xn = 1
+                                        else:
+                                            xn = 0
+
+                                        if isfloat(t6):
+                                            a = float(t6)
+                                            points= []
+                                                    
+                                            if a>=limit1 and a<1.0:
+                                                # 数値がlimit以上の場合はデータに登録
+
+                                                # xxx0 = CharLine[nn][1]
+                                                # xxx1 = CharLine[nn][2]
+                                                # yyy0 = CharLine[nn][3]
+                                                # yyy1 = CharLine[nn][4]
+                                                # points.append((xxx0,yyy0,xxx1,yyy0))
+                                                # points.append((xxx1,yyy0,xxx1,yyy1))
+                                                # points.append((xxx1,yyy1,xxx0,yyy1))
+                                                # points.append((xxx0,yyy1,xxx0,yyy0))
+
+                                                # p1 = [(xxx0+xxx1)/2.0,(yyy0+yyy1)/2.0]
+                                                # xxxx0 = CharLine[nn+ln-1][1]
+                                                # xxxx1 = CharLine[nn+ln-1][2]
+                                                # yyyy0 = CharLine[nn+ln-1][3]
+                                                # yyyy1 = CharLine[nn+ln-1][4]
+                                                # points.append((xxxx0,yyyy0,xxxx1,yyyy0))
+                                                # points.append((xxxx1,yyyy0,xxxx1,yyyy1))
+                                                # points.append((xxxx1,yyyy1,xxxx0,yyyy1))
+                                                # points.append((xxxx0,yyyy1,xxxx0,yyyy0))
+
+                                                # p2 = [(xxxx0+xxxx1)/2.0,(yyyy0+yyyy1)/2.0]
+                                                # CL = math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
+                                                # cc = (p2[1]-p1[1])/(p2[0]-p1[0])
+                                                # th = math.atan(cc)
+
+                                                # if abs(th) > 0.0 :
+                                                #     points.append([p1[0],p1[1],p2[0],p2[1]])
+
+
+                                                #     c1 = math.cos(th)
+                                                #     s1 = math.sin(th)
+                                                #     cx = p1[0]
+                                                #     cy = p1[1]
+                                                #     dw = 3
+                                                #     dh = 5
+                                                #     x = [cx-dw , cx+CL+dw , cx+CL+dw , cx-dw , cx-dw]
+                                                #     y = [cy-dh ,cy -dh , cy+dh , cy+dh , cy-dh]
+                                                #     PP = []
+                                                #     for i in range(len(x)):
+                                                #         XX = c1*x[i] - s1*y[i] + cx-cx*c1+cy*s1
+                                                #         YY = s1*x[i] + s1*y[i] + cy-cx*s1-cy*c1
+                                                #         PP.append([XX , YY])
+                                                #     # points = []
+                                                #     for i in range(len(PP)-1):
+                                                #         points.append([PP[i][0],PP[i][1],PP[i+1][0],PP[i+1][1]])
+
+
+                                                # # xmin = 10000.0
+                                                # # xmax = -10000.0
+                                                # # ymin = 10000.0
+                                                # # ymax = -10000.0
+                                                # # for i in range(ln):
+                                                # #     if CharLine[nn+i][1] < xmin:
+                                                        
+                                                # else:
+
+                                                # if CharLine[nn][3][1]>0.0 :
+                                                #     dy0 = 0.0
+                                                #     dy1 = 6.0
+                                                # else:
+                                                #     dy0 = -6.0
+                                                #     dy1 = 0.0
+                                                xxx0 = CharLine[nn-xn][1]
+                                                xxx1 = CharLine[nn+ln+xn-1][2]
+                                                if CharLine[nn][5][1]>0.0:
+                                                    yyy0 = CharLine[nn][3]
+                                                    yyy1 = CharLine[nn+ln+xn-1][4]
+                                                else:
+                                                    yyy0 = CharLine[nn+ln+xn-1][3]-3.0
+                                                    yyy1 = CharLine[nn][4]
+
+                                                if ln <=4 :
+                                                    xxx0 -= xd
+                                                    xxx1 += xd
+                                                width3 = xxx1 - xxx0
+                                                height3 = yyy1 - yyy0
+                                                points = []
+                                                points.append((xxx0,yyy0,xxx1,yyy0))
+                                                points.append((xxx1,yyy0,xxx1,yyy1))
+                                                points.append((xxx1,yyy1,xxx0,yyy1))
+                                                points.append((xxx0,yyy1,xxx0,yyy0))
+
+                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
+                                                flag = True
+                                                pageFlag = True
+                                                val = a
+                                                print('val={:.2f}'.format(val))
+
+                                        # 数値を検索を開始するを文字数分移動
+                                        st = nn + ln + 1
+                        
+
+
+
+
+
+
+
+
                     elif mode == "柱の検定表" : 
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData1, outtext2 ,CharData2  = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             # lines =t1.splitlines()
                             i = -1
                             kmode = False
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
                                 if kmode == False:                           
@@ -382,15 +660,15 @@ class CheckTool():
                                         kmode = True
                                         # 「検定比」の下にある数値だけを検出するためのX座標を取得
                                         n = t3.index("検定比")
-                                        c1 = CharData5[i][n]
+                                        c1 = CharData1[i][n]
                                         zx0 = c1[1]
-                                        c2 = CharData5[i][n+2]
+                                        c2 = CharData1[i][n+2]
                                         zx1 = c2[2]
                                         # print(c1[0],c2[0], zx0, zx1)
                                 else:
                                     # kmode=Trueの場合の処理
                                     
-                                    CharLine = CharData5[i] # １行文のデータを読み込む
+                                    CharLine = CharData1[i] # １行文のデータを読み込む
                                     t4 = ""
                                     xxx0 = 100000.0
                                     yyy0 = 100000.0
@@ -414,7 +692,12 @@ class CheckTool():
                                             xxx1 += xd
                                             width3 = xxx1 - xxx0
                                             height3 = yyy1 - yyy0
-                                            ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                            points = []
+                                            points.append((xxx0,yyy0,xxx1,yyy0))
+                                            points.append((xxx1,yyy0,xxx1,yyy1))
+                                            points.append((xxx1,yyy1,xxx0,yyy1))
+                                            points.append((xxx0,yyy1,xxx0,yyy0))
+                                            ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
                                             flag = True
                                             pageFlag = True
                                             val = a
@@ -441,7 +724,12 @@ class CheckTool():
                                                 xxx1 = CharLine[nn+3][2]
                                                 yyy0 = CharLine[nn][3]
                                                 yyy1 = CharLine[nn][4]
-                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                                points = []
+                                                points.append((xxx0,yyy0,xxx1,yyy0))
+                                                points.append((xxx1,yyy0,xxx1,yyy1))
+                                                points.append((xxx1,yyy1,xxx0,yyy1))
+                                                points.append((xxx0,yyy1,xxx0,yyy0))
+                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
                                                 flag = True
                                                 pageFlag = True
                                                 val = a
@@ -467,7 +755,12 @@ class CheckTool():
                                                         xxx1 += xd
                                                         width3 = xxx1 - xxx0
                                                         height3 = yyy1 - yyy0
-                                                        ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                                        points = []
+                                                        points.append((xxx0,yyy0,xxx1,yyy0))
+                                                        points.append((xxx1,yyy0,xxx1,yyy1))
+                                                        points.append((xxx1,yyy1,xxx0,yyy1))
+                                                        points.append((xxx0,yyy1,xxx0,yyy0))
+                                                        ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
                                                         flag = True
                                                         pageFlag = True
                                                         val = a
@@ -477,16 +770,16 @@ class CheckTool():
                                         
                     elif mode == "梁の検定表" : 
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData1, outtext2 ,CharData2  = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
 
                             # lines =t1.splitlines()
                             i = -1
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
-                                CharLine = CharData5[i] # １行文のデータを読み込む
+                                CharLine = CharData1[i] # １行文のデータを読み込む
                                 
                                 if "検定比" in t3 : # 「検定比」が現れた場合の処理
                                     # print(t3)
@@ -509,7 +802,12 @@ class CheckTool():
                                                     xxx1 += xd
                                                     width3 = xxx1 - xxx0
                                                     height3 = yyy1 - yyy0
-                                                    ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                                    points = []
+                                                    points.append((xxx0,yyy0,xxx1,yyy0))
+                                                    points.append((xxx1,yyy0,xxx1,yyy1))
+                                                    points.append((xxx1,yyy1,xxx0,yyy1))
+                                                    points.append((xxx0,yyy1,xxx0,yyy0))
+                                                    ResultData.append([a,[xxx0, yyy0, width3, height3],False,points])
                                                     flag = True
                                                     pageFlag = True
                                                     val = a
@@ -520,19 +818,19 @@ class CheckTool():
                                             
 
                     elif mode == "壁の検定表":
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData1, outtext2 ,CharData2  = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             i = -1
-                            tn = len(t1)
+                            tn = len(outtext1)
 
                             while True:
                                 i += 1
                                 if i > tn-1 : break
 
-                                t3 = t1[i][0]
+                                t3 = outtext1[i][0]
                                 # print(t3)
-                                CharLine = CharData5[i]
+                                CharLine = CharData1[i]
                                 if "QDL" in t3:
                                     nn = t3.find("QDL",0)   # 数値の文字位置を検索
                                     xxx0 = CharLine[nn][1]
@@ -544,8 +842,8 @@ class CheckTool():
                                         A1 = 0.0
                                     
                                     i += 1
-                                    t3 = t1[i][0]
-                                    CharLine = CharData5[i]
+                                    t3 = outtext1[i][0]
+                                    CharLine = CharData1[i]
                                     
                                     nn  = t3.find("QAL",0) 
                                     yyy0 = CharLine[nn][3]
@@ -570,16 +868,21 @@ class CheckTool():
                                             xxx1 += xd
                                             width3 = xxx1 - xxx0
                                             height3 = yyy1 - yyy0
-                                            ResultData.append([a,[xxx0, yyy0, width3, height3],True])
+                                            points = []
+                                            points.append((xxx0,yyy0,xxx1,yyy0))
+                                            points.append((xxx1,yyy0,xxx1,yyy1))
+                                            points.append((xxx1,yyy1,xxx0,yyy1))
+                                            points.append((xxx0,yyy1,xxx0,yyy0))
+                                            ResultData.append([a,[xxx0, yyy0, width3, height3],True,points])
                                             flag = True
                                             pageFlag = True
                                             val = a
                                             print('val={:.2f}'.format(val))
 
                                     i += 1
-                                    t3 = t1[i][0]
+                                    t3 = outtext1[i][0]
                                     # print(t3)
-                                    CharLine = CharData5[i]
+                                    CharLine = CharData1[i]
 
                                     nn = t3.find("QDS",0)   # 数値の文字位置を検索
                                     xxx0 = CharLine[nn][1]
@@ -593,8 +896,8 @@ class CheckTool():
                                         
                                 
                                     i += 1
-                                    t3 = t1[i][0]
-                                    CharLine = CharData5[i]
+                                    t3 = outtext1[i][0]
+                                    CharLine = CharData1[i]
                                     
                                     nn = t3.find("QAS",0)
                                     yyy0 = CharLine[nn][3]
@@ -619,7 +922,12 @@ class CheckTool():
                                             xxx1 += xd
                                             width3 = xxx1 - xxx0
                                             height3 = yyy1 - yyy0
-                                            ResultData.append([a,[xxx0, yyy0, width3, height3],True])
+                                            points = []
+                                            points.append((xxx0,yyy0,xxx1,yyy0))
+                                            points.append((xxx1,yyy0,xxx1,yyy1))
+                                            points.append((xxx1,yyy1,xxx0,yyy1))
+                                            points.append((xxx0,yyy1,xxx0,yyy0))
+                                            ResultData.append([a,[xxx0, yyy0, width3, height3],True,points])
                                             flag = True
                                             pageFlag = True
                                             val = a
@@ -691,11 +999,14 @@ class CheckTool():
                     y0 = origin[1]
                     width = origin[2]
                     height = origin[3]
+                    points = R1[3]
 
                     # 長方形の描画
                     cc.setFillColor("white", 0.5)
                     cc.setStrokeColorRGB(1.0, 0, 0)
                     cc.rect(x0, y0, width, height, fill=0)
+                    # cc.lines(points)
+                    # cc.lines([(20,0,20,10), (20,30,20,40), (0,20,10,20), (30,20,40,20)])
 
                     if flag:    # "壁の検定表"の場合は、四角形の右肩に数値を印字
                         cc.setFillColor("red")
@@ -923,7 +1234,7 @@ class CheckTool():
 
 
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData5, outtext2 ,CharData66= self.MakeChar(page, interpreter2,device2)
 
                         for char2 in CharData5:
                             for char in char2:
@@ -936,9 +1247,9 @@ class CheckTool():
                                 h = y1 - y0
                                 print("{}, w={:.2f}, h={:.2f}, x0={:.2f}, x1={:.2f}, y0={:.2f}, y1={:.2f}".format(c,w,h,x0,x1,y0,y1))
                             
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             i = -1
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
                                 CharLine = CharData5[i] # １行文のデータを読み込む
@@ -984,13 +1295,13 @@ class CheckTool():
                                     
                     elif mode == "柱の検定表" : 
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData5, outtext2 ,CharData6 = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             # lines =t1.splitlines()
                             i = -1
                             kmode = False
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
                                 if kmode == False:                           
@@ -1093,13 +1404,13 @@ class CheckTool():
                                         
                     elif mode == "梁の検定表" : 
 
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData5, outtext2 ,CharData6 = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
 
                             # lines =t1.splitlines()
                             i = -1
-                            for line in t1:
+                            for line in outtext1:
                                 i += 1
                                 t3 = line[0]
                                 CharLine = CharData5[i] # １行文のデータを読み込む
@@ -1136,17 +1447,17 @@ class CheckTool():
                                             
 
                     elif mode == "壁の検定表":
-                        t1 , CharData5 = self.MakeChar(page, interpreter2,device2)
+                        outtext1 , CharData5, outtext2 ,CharData6 = self.MakeChar(page, interpreter2,device2)
                         
-                        if len(t1) > 0:
+                        if len(outtext1) > 0:
                             i = -1
-                            tn = len(t1)
+                            tn = len(outtext1)
 
                             while True:
                                 i += 1
                                 if i > tn-1 : break
 
-                                t3 = t1[i][0]
+                                t3 = outtext1[i][0]
                                 # print(t3)
                                 CharLine = CharData5[i]
                                 if "QDL" in t3:
@@ -1160,7 +1471,7 @@ class CheckTool():
                                         A1 = 0.0
                                     
                                     i += 1
-                                    t3 = t1[i][0]
+                                    t3 = outtext1[i][0]
                                     CharLine = CharData5[i]
                                     
                                     nn  = t3.find("QAL",0) 
@@ -1193,7 +1504,7 @@ class CheckTool():
                                             print('val={:.2f}'.format(val))
 
                                     i += 1
-                                    t3 = t1[i][0]
+                                    t3 = outtext1[i][0]
                                     # print(t3)
                                     CharLine = CharData5[i]
 
@@ -1209,7 +1520,7 @@ class CheckTool():
                                         
                                 
                                     i += 1
-                                    t3 = t1[i][0]
+                                    t3 = outtext1[i][0]
                                     CharLine = CharData5[i]
                                     
                                     nn = t3.find("QAS",0)

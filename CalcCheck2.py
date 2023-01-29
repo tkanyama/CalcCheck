@@ -5,7 +5,7 @@ import json
 import glob
 import shutil
 from tkinter import filedialog
-from CheckTool import CheckTool
+from CheckTool2 import CheckTool
 
 if __name__ == '__main__':
 
@@ -59,8 +59,8 @@ if __name__ == '__main__':
         folders = [f for f in folderfile if os.path.isdir(os.path.join(inputRCPath, f))]
         print(folders)
 
-        stpage = 150
-        edpage = 300
+        stpage = 242
+        edpage = 250
         # CT = CheckTool()
         if len(folders) > 0:
             for folder in folders:
