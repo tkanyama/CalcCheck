@@ -99,8 +99,9 @@ class CheckTool():
         for lt in layout:
             if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
-                # if lt.x0 >= page_xmax/2.0:  # ページの右半分の文字だけを取得
-                CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1])
+                m1 = lt.matrix
+                if m1[1] == 0.0 :  # 回転していない文字のみを抽出
+                    CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
 
         # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
         CharData2=[]
@@ -168,6 +169,77 @@ class CheckTool():
                 t1.append([t2])
                 # print(t2,len(F3))
                 CharData5.append(F3)
+
+        CharData2 = []
+        for lt in layout:
+            if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
+                char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
+                if lt.matrix[1] > 0.0 : # 正の回転している文字のみを抽出
+                    CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+        for lt in layout:
+            if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
+                char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
+                if lt.matrix[1] < 0.0 : # 正の回転している文字のみを抽出
+                    CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+        # CharData2 = CharDataPlus
+        # outtext2 = []
+        # CharOutPut2 = []
+        fline = []
+        Sflag = False
+        tt2 = ""
+        # for F1 in CharData:
+        #     if not Sflag:
+        #         if F1[0] != " ":
+        #             fline.append(F1)
+        #             tt2 += F1[0]
+        #             Sflag = True
+        #         # else:
+        #         #     Sflag = True
+        #         #     continue
+        #     else:
+        #         if F1[0] == " ":
+        #             CharOutPut2.append(fline)
+        #             outtext2.append([tt2])
+        #             fline = []
+        #             tt2 = ""
+        #             Sflag = False
+        #         else:
+        #             fline.append(F1)
+        #             tt2 += F1[0]
+
+        # if len(fline)>0:
+        #     CharOutPut2.append(fline)
+        #     outtext2.append([tt2])
+
+        fline = []
+        Sflag = False
+        tt2 = ""
+        for F1 in CharData2:
+            if not Sflag:
+                if F1[0] != " ":
+                    fline.append(F1)
+                    tt2 += F1[0]
+                    Sflag = True
+                # else:
+                #     Sflag = True
+                #     continue
+            else:
+                if F1[0] == " ":
+                    CharData5.append(fline)
+                    t1.append([tt2])
+                    fline = []
+                    tt2 = ""
+                    Sflag = False
+                else:
+                    fline.append(F1)
+                    tt2 += F1[0]
+
+        if len(fline)>0:
+            CharData5.append(fline)
+            t1.append([tt2])
+
+        
+
         
         return t1 , CharData5
 
@@ -355,9 +427,17 @@ class CheckTool():
                                             if a>=limit1 and a<1.0:
                                                 # 数値がlimit以上の場合はデータに登録
                                                 xxx0 = CharLine[nn-xn][1]
-                                                xxx1 = CharLine[nn+ln+xn][2]
-                                                yyy0 = CharLine[nn][3]
-                                                yyy1 = CharLine[nn][4]
+                                                xxx1 = CharLine[nn+ln+xn-1][2]
+                                                if CharLine[nn][5][1] > 0.0:
+                                                    yyy0 = CharLine[nn][3] - 1.0
+                                                    yyy1 = CharLine[nn+ln+xn-1][4] + 1.0
+                                                elif CharLine[nn][5][1] < 0.0:
+                                                    yyy0 = CharLine[nn+ln+xn-1][3] - 2.0
+                                                    yyy1 = CharLine[nn][4] + 2.0
+                                                else:
+                                                    yyy0 = CharLine[nn][3]
+                                                    yyy1 = CharLine[nn][4]
+                                                    
                                                 if ln <=4 :
                                                     xxx0 -= xd
                                                     xxx1 += xd
@@ -766,10 +846,16 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    stpage = 242
-    edpage = 246
+    # stpage = 242
+    # edpage = 246
+    # limit = 0.70
+    # filename = "サンプル計算書(1).pdf"
+
+    stpage = 234
+    edpage = 256
     limit = 0.70
-    filename = "サンプル計算書(1).pdf"
+    filename = "新_サンプル計算書(2)PDF.pdf"
+
     CT.CheckTool(filename,limit=limit,stpage=stpage,edpage=edpage)
     # for Calcname in CalcNames:
     #     inputRCPath = dir1 + "/" + Calcname[0]
