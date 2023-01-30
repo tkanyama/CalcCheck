@@ -387,7 +387,22 @@ class CheckTool():
                         mode = "壁の検定表"
                     if 杭_Flag :
                         mode = "杭の検定表"
-                
+
+
+                    for lt in layout:
+                        # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+                        if isinstance(lt, LTTextContainer):
+                            texts = lt.get_text()
+                            if "RC柱"in texts or "RC梁"in texts:
+                                B_kind = "RC造"
+                                break
+                            if "SRC柱"in texts or "SRC梁"in texts:
+                                B_kind = "SRC造"
+                                break
+                            if "S柱"in texts or "S梁"in texts:
+                                B_kind = "S造"
+                                break
+
                     if mode == "" :     # 該当しない場合はこのページの処理は飛ばす。
                         print("No Data")
                         continue
@@ -437,7 +452,7 @@ class CheckTool():
                                                 else:
                                                     yyy0 = CharLine[nn][3]
                                                     yyy1 = CharLine[nn][4]
-                                                    
+
                                                 if ln <=4 :
                                                     xxx0 -= xd
                                                     xxx1 += xd
@@ -464,8 +479,8 @@ class CheckTool():
                             for line in t1:
                                 i += 1
                                 t3 = line[0]
-                                if kmode == False:                           
-                                    if "検定比" in t3 : # 奇数回目の「検定比」が現れたら「kmode」をTrue
+                                if not kmode :
+                                    if "検定比" in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
                                         kmode = True
                                         # 「検定比」の下にある数値だけを検出するためのX座標を取得
                                         n = t3.index("検定比")
@@ -475,14 +490,9 @@ class CheckTool():
                                         zx1 = c2[2]
                                         # print(c1[0],c2[0], zx0, zx1)
                                 else:
-                                    # kmode=Trueの場合の処理
-                                    
                                     CharLine = CharData5[i] # １行文のデータを読み込む
                                     t4 = ""
-                                    xxx0 = 100000.0
-                                    yyy0 = 100000.0
-                                    xxx1 = -100000.0
-                                    yyy1 = -100000.0
+                                
                                     for char in CharLine:
                                         # kmodeの時には「検定比」の下にある数値だけを検出する。
                                         if char[1]>=zx0 and char[2]<=zx1:
@@ -506,61 +516,47 @@ class CheckTool():
                                             pageFlag = True
                                             val = a
                                             print('val={:.2f}'.format(val))
-                                    
-                                    if "検定比" in t3 : # 偶数回目の「検定比」が現れたら「kmode」をFalseにする
-                                        kmode = False
 
-                                        # まず、同様に検定比」の下にある数値だけを検出する。
-                                        t4 = ""
-                                        xxx0 = 100000.0
-                                        yyy0 = 100000.0
-                                        xxx1 = -100000.0
-                                        yyy1 = -100000.0
-                                        for char in CharLine:
-                                            if char[1]>=zx0 and char[2]<=zx1:
-                                                t4 += char[0]
-
-                                        if isfloat(t4):
-                                            a = float(t4)
-                                            if a>=limit1 and a<1.0:
-                                                nn = t3.index(t4)   # 数値の文字位置を検索
-                                                xxx0 = CharLine[nn][1]
-                                                xxx1 = CharLine[nn+3][2]
-                                                yyy0 = CharLine[nn][3]
-                                                yyy1 = CharLine[nn][4]
-                                                ResultData.append([a,[xxx0, yyy0, width3, height3],False])
-                                                flag = True
-                                                pageFlag = True
-                                                val = a
-                                                print('val={:.2f}'.format(val))
-
-                                    #　続いて検定比」の右側にある数値を検出する。
-                                        n = t3.index("検定比")      # 偶数回目の「検定比」の文字位置を検索
-                                        t4 = t3[n+3:]              # 「検定比」の右側だけの文字列を取得
+                            i = -1
+                            for line in t1:
+                                i += 1
+                                t3 = line[0]
+                                
+                                CharLine = CharData5[i] # １行文のデータを読み込む
+                                t4 = ""
+                            
+                                for char in CharLine:
+                                    # kmodeの時には「検定比」の下にある数値だけを検出する。
+                                    if char[1]>zx1:
+                                        t4 += char[0]
+                                if "検定比" in t4:
+                                    st = 0
+                                    n = t3.find("検定比",st)
+                                    w0 = t4.split()
+                                    if len(w0)>1:
                                         st = n + 3
-                                        t5 = t4.split()            # 文字列を空白で分割
-                                        if len(t5)>0:    # 文字列配列が１個以上ある場合に処理
-                                            for t6 in t5:
-                                                if isfloat(t6):
-                                                    a = float(t6)
-                                                    if a>=limit1 and a<1.0:
-                                                        # 数値がlimit以上の場合はデータに登録
-                                                        nn = t3.find(t6,st)   # 数値の文字位置を検索
-                                                        xxx0 = CharLine[nn][1]
-                                                        xxx1 = CharLine[nn+3][2]
-                                                        yyy0 = CharLine[nn][3]
-                                                        yyy1 = CharLine[nn][4]
-                                                        xxx0 -= xd
-                                                        xxx1 += xd
-                                                        width3 = xxx1 - xxx0
-                                                        height3 = yyy1 - yyy0
-                                                        ResultData.append([a,[xxx0, yyy0, width3, height3],False])
-                                                        flag = True
-                                                        pageFlag = True
-                                                        val = a
-                                                        print('val={:.2f}'.format(val))
-                                                st += len(t6)
+                                        for w1 in w0:
+                                            w2 = w1.replace("検定比","")
+                                            if isfloat(w2): # 切り取った文字が数値の場合の処理
+                                                a = float(w2)
+                                                if a>=limit1 and a<1.0:
+                                                    # 数値がlimit以上の場合はデータに登録
+                                                    n = t3.find(w2,st)   # 数値の文字位置を検索
+                                                    xxx0 = CharLine[n][1]
+                                                    xxx1 = CharLine[n+3][2]
+                                                    yyy0 = CharLine[n][3]
+                                                    yyy1 = CharLine[n][4]
+                                                    xxx0 -= xd
+                                                    xxx1 += xd
+                                                    width3 = xxx1 - xxx0
+                                                    height3 = yyy1 - yyy0
+                                                    ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                                    flag = True
+                                                    pageFlag = True
+                                                    val = a
+                                                    print('val={:.2f}'.format(val))
                                             
+                                            st = t3.find(w1,st)+ len(w1)
                                         
                     elif mode == "梁の検定表" : 
 
@@ -603,7 +599,8 @@ class CheckTool():
                                                     print('val={:.2f}'.format(val))
 
                                             # 数値を検索を開始するを文字数分移動
-                                            st += ln
+                                            st = t3.find(t5,st)+ len(t5)
+                                            # st += ln
                                             
 
                     elif mode == "壁の検定表":
@@ -846,15 +843,26 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    # stpage = 242
-    # edpage = 246
+    # stpage = 100
+    # edpage = 300
     # limit = 0.70
     # filename = "サンプル計算書(1).pdf"
 
-    stpage = 234
-    edpage = 256
+    # stpage = 198
+    # edpage = 199
+    # limit = 0.50
+    # filename = "サンプル計算書(1)a.pdf"
+
+    # stpage = 269
+    # edpage = 269
+    # limit = 0.50
+    # filename = "新_サンプル計算書(2)PDF.pdf"
+
+    stpage = 2
+    edpage = 55
     limit = 0.70
-    filename = "新_サンプル計算書(2)PDF.pdf"
+    filename = "サンプル計算書(3)抜粋.pdf"
+
 
     CT.CheckTool(filename,limit=limit,stpage=stpage,edpage=edpage)
     # for Calcname in CalcNames:
