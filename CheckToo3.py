@@ -315,6 +315,7 @@ class CheckTool():
         pageNo = []
         limit1 = limit
         limit2 = 0.40
+        limit3 = 0.40
 
         with open(pdf_file, 'rb') as fp:
             interpreter = PDFPageInterpreter(resourceManager, device)
@@ -351,6 +352,7 @@ class CheckTool():
                     柱_Flag = False
                     梁_Flag = False
                     壁_Flag = False
+                    ブレース_Flag = False
                     杭_Flag = False
                     検定比図_Flag = False
 
@@ -367,15 +369,33 @@ class CheckTool():
                             if  "梁の断面検定表"in texts:
                                 梁_Flag = True
                                 break
-                            if "壁の断面検定表"in texts :
+                            if "壁の断面検定表"in texts :                               
                                 壁_Flag = True
                                 break
                             if "断面算定表"in texts and "杭基礎"in texts:
                                 杭_Flag = True
                                 break
+                            if "ブレースの断面検定表"in texts :
+                                    ブレース_Flag = True
+                                    break
                             if "検定比図"in texts:
                                 検定比図_Flag = True
                                 break
+                    
+                    if 壁_Flag:
+                        i=0
+                        for lt in layout:
+                            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+                            if isinstance(lt, LTTextContainer):
+                                texts = lt.get_text()
+                                if "ブレースの断面検定表"in texts :
+                                    ブレース_Flag = True
+                                    壁_Flag = False
+                                    break
+                            i += 1
+                            if i>20:
+                                break
+
                         
                     if 検定比図_Flag:
                         mode = "検定比図"
@@ -387,8 +407,12 @@ class CheckTool():
                         mode = "壁の検定表"
                     if 杭_Flag :
                         mode = "杭の検定表"
+                    if ブレース_Flag :
+                        mode = "ブレースの検定表"
 
 
+                    i = 0
+                    B_kind = ""
                     for lt in layout:
                         # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
                         if isinstance(lt, LTTextContainer):
@@ -402,6 +426,10 @@ class CheckTool():
                             if "S柱"in texts or "S梁"in texts:
                                 B_kind = "S造"
                                 break
+                        # i +=1
+                        # if i>50:
+                        #     break
+
 
                     if mode == "" :     # 該当しない場合はこのページの処理は飛ばす。
                         print("No Data")
@@ -606,7 +634,7 @@ class CheckTool():
                                                         w2 = w1.replace(" ","")
                                                         if isfloat(w2): # 切り取った文字が数値の場合の処理
                                                             a = float(w2)
-                                                            if a>=limit1 and a<1.0:
+                                                            if a>=limit3 and a<1.0:
                                                                 # 数値がlimit以上の場合はデータに登録
                                                                 n = t3.find(w2,st)   # 数値の文字位置を検索
                                                                 xxx0 = CharLine[n][1]
@@ -854,6 +882,96 @@ class CheckTool():
                         pageFlaf = False
 
 
+#=================================================================================================
+#   ブレースの検定表のチェック
+#=================================================================================================
+                                    
+                    elif mode == "ブレースの検定表" : 
+
+                        CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+                        
+                        if len(CharLines) > 0:
+                                # lines =t1.splitlines()
+                                i = -1
+                                kmode = False
+                                for line in CharLines:
+                                    i += 1
+                                    t3 = line[0]
+                                    fword = "Nt/Nat"
+                                    if not kmode :
+                                        if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
+                                            kmode = True
+                                            # 「検定比」の下にある数値だけを検出するためのX座標を取得
+                                            n = t3.index(fword)
+                                            c1 = CharData[i][n]
+                                            zx0 = c1[1]
+                                            c2 = CharData[i][n+len(fword)-1]
+                                            zx1 = c2[2]
+                                            # print(c1[0],c2[0], zx0, zx1)
+                                    else:
+                                        CharLine = CharData[i] # １行文のデータを読み込む
+                                        t4 = ""
+                                    
+                                        for char in CharLine:
+                                            # kmodeの時には「検定比」の下にある数値だけを検出する。
+                                            if char[1]>=zx0 :
+                                                t4 += char[0]
+                                        if t4 == "" :
+                                            kmode = False
+
+                                        if isfloat(t4): # 切り取った文字が数値の場合の処理
+                                            st = 0
+                                            w0 = t4.split()
+                                            if len(w0)>1:
+                                                for w1 in w0:
+                                                    w2 = w1.replace(" ","")
+                                                    if isfloat(w2): # 切り取った文字が数値の場合の処理
+                                                        a = float(w2)
+                                                        if a>=limit3 and a<1.0:
+                                                            # 数値がlimit以上の場合はデータに登録
+                                                            n = t3.find(w2,st)   # 数値の文字位置を検索
+                                                            xxx0 = CharLine[n][1]
+                                                            xxx1 = CharLine[n+3][2]
+                                                            yyy0 = CharLine[n][3]
+                                                            yyy1 = CharLine[n][4]
+                                                            xxx0 -= xd
+                                                            xxx1 += xd
+                                                            width3 = xxx1 - xxx0
+                                                            height3 = yyy1 - yyy0
+                                                            ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                                            flag = True
+                                                            pageFlag = True
+                                                            val = a
+                                                            print('val={:.2f}'.format(val))
+                                                    
+                                                    st = t3.find(w1,st)+ len(w1)
+                                            
+
+
+
+
+
+                                            # a = float(t4)
+                                            # if a>=limit1 and a<1.0:
+                                            #     # 数値がlimit以上の場合はデータに登録
+                                            #     nn = t3.index(t4)   # 数値の文字位置を検索
+                                            #     xxx0 = CharLine[nn][1]
+                                            #     xxx1 = CharLine[nn+3][2]
+                                            #     yyy0 = CharLine[nn][3]
+                                            #     yyy1 = CharLine[nn][4]
+                                            #     xxx0 -= xd
+                                            #     xxx1 += xd
+                                            #     width3 = xxx1 - xxx0
+                                            #     height3 = yyy1 - yyy0
+                                            #     ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                            #     flag = True
+                                            #     pageFlag = True
+                                            #     val = a
+                                            #     print('val={:.2f}'.format(val))
+
+
+
+
                 if pageFlag : 
                     pageNo.append(pageI)
                     pageResultData.append(ResultData)
@@ -946,19 +1064,24 @@ if __name__ == '__main__':
     # limit = 0.70
     # filename = "サンプル計算書(1).pdf"
 
-    # stpage = 198
-    # edpage = 199
-    # limit = 0.50
+    # stpage = 100
+    # edpage = 0
+    # limit = 0.70
     # filename = "サンプル計算書(1)a.pdf"
 
-    # stpage = 269
-    # edpage = 269
-    # limit = 0.50
+    # stpage = 100
+    # edpage = 0
+    # limit = 0.70
     # filename = "新_サンプル計算書(2)PDF.pdf"
 
-    stpage = 135
-    edpage = 136
-    limit = 0.10
+    # stpage = 2
+    # edpage = 136
+    # limit = 0.70
+    # filename = "サンプル計算書(3)抜粋.pdf"
+
+    stpage = 2
+    edpage = 0
+    limit = 0.70
     filename = "サンプル計算書(3)抜粋.pdf"
 
 
