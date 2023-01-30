@@ -57,10 +57,12 @@ class CheckTool():
     
     def __init__(self):
         # 源真ゴシック等幅フォント
-        GEN_SHIN_GOTHIC_MEDIUM_TTF = "/Library/Fonts/GenShinGothic-Monospace-Medium.ttf"
+        # GEN_SHIN_GOTHIC_MEDIUM_TTF = "/Library/Fonts/GenShinGothic-Monospace-Medium.ttf"
+        GEN_SHIN_GOTHIC_MEDIUM_TTF = "./Fonts/GenShinGothic-Monospace-Medium.ttf"
         self.fontname1 = 'GenShinGothic'
         # IPAexゴシックフォント
-        IPAEXG_TTF = "/Library/Fonts/ipaexg.ttf"
+        # IPAEXG_TTF = "/Library/Fonts/ipaexg.ttf"
+        IPAEXG_TTF = "./Fonts/ipaexg.ttf"
         self.fontname2 = 'ipaexg'
         
         # フォント登録
