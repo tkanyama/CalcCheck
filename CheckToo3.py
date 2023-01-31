@@ -508,7 +508,7 @@ class CheckTool():
 
                         CharLines , CharData = self.MakeChar(page, interpreter2,device2)
                         
-                        if B_kind == "RC造" or B_kind == "SRC造":
+                        if B_kind == "RC造" or B_kind == "SRC造" or B_kind == "":
                             # =======================================================
                             #   RC造およびSRC造の柱の検定表
                             # ======================================================= 
@@ -663,7 +663,7 @@ class CheckTool():
                     elif mode == "梁の検定表" : 
 
                         CharLines , CharData = self.MakeChar(page, interpreter2,device2)
-                        if B_kind == "RC造" or B_kind == "SRC造":
+                        if B_kind == "RC造" or B_kind == "SRC造" or B_kind == "":
                             # =======================================================
                             #   RC造およびSRC造の梁の検定表
                             # ======================================================= 
