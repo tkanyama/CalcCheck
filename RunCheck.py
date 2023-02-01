@@ -8,6 +8,7 @@ from tkinter import filedialog
 from CheckTool4 import CheckTool
 import logging
 
+
 if __name__ == '__main__':
     los_file  = './main.log'
     # log 出力レベルの設定

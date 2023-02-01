@@ -302,8 +302,8 @@ class CheckTool():
         # pageText = []
         pageNo = []
         limit1 = limit
-        limit2 = 0.40
-        limit3 = 0.40
+        limit2 = limit
+        limit3 = limit
 
         try:
             with open(pdf_file, 'rb') as fp:
