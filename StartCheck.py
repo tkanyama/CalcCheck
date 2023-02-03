@@ -77,7 +77,7 @@ def CreateFolfer():
                 json.dump(para, fp, indent=4, ensure_ascii=False)
 
         else:
-            json_open = open(initFile, 'r')
+            json_open = open(initFile, 'r', encoding="utf-8")
             json_load = json.load(json_open)
             dir1 = json_load['処理前フォルダ']
             dir2 = json_load['処理後フォルダ']
@@ -146,7 +146,7 @@ def RunCheck():
                         parafile = path1 + '/' + paraFileName
 
                         if os.path.isfile(parafile):    # パラメータファイルがある場合はパラメータを読み込む
-                            json_open = open(parafile, 'r')
+                            json_open = open(parafile, 'r', encoding="utf-8")
                             json_load = json.load(json_open)
                             limit1 = json_load['数値の閾値']
                             stpage = json_load['開始ページ']
