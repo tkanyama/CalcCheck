@@ -69,11 +69,11 @@ def CreateFolfer():
 
             pageData = {"処理前フォルダ": dir1, "処理後フォルダ": dir2, "ログ": dir3, "パラメータファイルのテンプレート": dir4}
             # data_json = json.dumps(pageData, indent=4, ensure_ascii=False)
-            with open('init.json', 'w') as fp:
+            with open('init.json', 'w', encoding="utf-8") as fp:
                 json.dump(pageData, fp, indent=4, ensure_ascii=False)
 
             para = {"数値の閾値": 0.95, "開始ページ": 2, "終了ページ": 0}
-            with open(dir4+'/'+paraFileName, 'w') as fp:
+            with open(dir4+'/'+paraFileName, 'w', encoding="utf-8") as fp:
                 json.dump(para, fp, indent=4, ensure_ascii=False)
 
         else:
