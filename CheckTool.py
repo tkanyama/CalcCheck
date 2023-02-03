@@ -992,7 +992,9 @@ class CheckTool():
     #============================================================================
 
     def CheckTool(self,filename, limit=0.95 ,stpage=0, edpage=0):
-
+        global flag1, fname, dir1, dir2, dir3, dir4, dir5, folderName, paraFileName
+        global ErrorFlag, ErrorMessage
+    
         if filename =="" :
             return False
 
