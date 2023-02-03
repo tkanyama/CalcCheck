@@ -1093,6 +1093,8 @@ class CheckTool():
                         pageNo.append(pageI)
                         pageResultData.append(ResultData)
 
+                fp.close()
+
         except OSError as e:
             print(e)
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
@@ -1178,6 +1180,7 @@ class CheckTool():
             # PDFの保存
             cc.save()
 
+            time.sleep(1.0)
             # # すべての処理がエラーなく終了したのでTrueを返す。
             # return True
 

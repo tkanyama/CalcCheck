@@ -71,10 +71,12 @@ def CreateFolfer():
             # data_json = json.dumps(pageData, indent=4, ensure_ascii=False)
             with open('init.json', 'w', encoding="utf-8") as fp:
                 json.dump(pageData, fp, indent=4, ensure_ascii=False)
+                fp.close()
 
             para = {"数値の閾値": 0.95, "開始ページ": 2, "終了ページ": 0}
             with open(dir4+'/'+paraFileName, 'w', encoding="utf-8") as fp:
                 json.dump(para, fp, indent=4, ensure_ascii=False)
+                fp.close()
 
         else:
             json_open = open(initFile, 'r', encoding="utf-8")
@@ -91,11 +93,15 @@ def CreateFolfer():
                 os.mkdir(dir3)
             if not os.path.isdir(dir4):
                 os.mkdir(dir4)
+            
+            json_open.close()
+            
 
             if not os.path.isfile(dir4+'/'+paraFileName):
                 para = {"数値の閾値": 0.95, "開始ページ": 2, "終了ページ": 0}
                 with open(dir4+'/'+paraFileName, 'w') as fp:
                     json.dump(para, fp, indent=4, ensure_ascii=False)
+                    fp.close()
 
     except OSError as e:
         print(e)
@@ -151,6 +157,7 @@ def RunCheck():
                             limit1 = json_load['数値の閾値']
                             stpage = json_load['開始ページ']
                             edpage = json_load['終了ページ']
+                            json_open.close()
                         else:                           # パラメータファイルがない場合はデフォルト値を設定
                             limit1 = 0.95
                             stpage = 2
@@ -200,10 +207,12 @@ def RunCheck():
     except OSError as e:
         print(e)
         logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
+        flag1 = False
         
     except:
         print("")
         logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
+        flag1 = False
     #*********************************************************************************
 
 
