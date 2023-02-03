@@ -1180,7 +1180,7 @@ class CheckTool():
             # PDFの保存
             cc.save()
 
-            time.sleep(1.0)
+            # time.sleep(1.0)
             # # すべての処理がエラーなく終了したのでTrueを返す。
             # return True
 

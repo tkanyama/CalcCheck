@@ -252,29 +252,40 @@ def main():
     Static2 = tk.Label(text=u'\n一般財団法人日本建築総合試験所', font=("MSゴシック", "28", "bold"))
     Static2.pack()
 
+    Static3 = tk.Label(text=u'\n\nファイル名：\n\nファイル名：', font=("MSゴシック", "28", "bold"))
+    Static3.pack()
+
+    Static4 = tk.Label(text=u'\n経過時間：', font=("ヒラギノ角ゴシック", "28", "bold"))
+    Static4.pack()
+
     root.update_idletasks()
     ww=root.winfo_screenwidth()
     lw=root.winfo_width()
     wh=root.winfo_screenheight()
     lh=root.winfo_height()
-    canvas=tk.Canvas(root,width=lw,heigh=lh)
-    canvas.pack()#ここを書かないとcanvasがうまく入らない．
+    # canvas=tk.Canvas(root,width=lw,heigh=lh)
+    # canvas.pack()#ここを書かないとcanvasがうまく入らない．
 
     root.geometry(str(lw)+"x"+str(lh)+"+"+str(int(ww/2-lw/2))+"+"+str(int(wh/2-lh/2)) )
 
     thread1 = threading.Thread(target=RunCheck)
     thread1.start()
     flag1 = True
+    # i = 0
     while flag1:
         root.update()
         # now_h=datetime.now().hour
         # now_s=datetime.now().second
         # now_m=datetime.now().minute
         # now_time=str(now_h)+":"+str(now_m)+":"+str(now_s)
-        now_time = folderName + "\n" + fname + "\n\n経過時間：{:7.0f}秒".format(time.time() - time_sta)
-        canvas.create_text(lw/2,200,text=now_time,font=("",25,""),tag='Y') #タグを入れることで更新できるようにする．
-        canvas.update()
-        canvas.delete('Y')
+        Static3["text"] = '\n\nフォルダー名：' + folderName + '\n\nファイル名：' + fname
+        Static4["text"] = "\n経過時間：{:7.0f}秒".format(time.time() - time_sta)
+        # canvas.create_text(lw/2,200,text=now_time,font=("",25,""),tag='Y') #タグを入れることで更新できるようにする．
+        # canvas.update()
+        # canvas.delete('Y')
+        # i += 1
+        # Static2["text"] = u'\n一般財団法人日本建築総合試験所{}'.format(i)
+
         time.sleep(1.0)
 
     #*********************************************************************************
