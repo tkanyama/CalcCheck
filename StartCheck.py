@@ -360,7 +360,11 @@ def main():
             time.sleep(1.0)
         
         if ErrorFlag:
+            # 何らかのエラーで処理を中止した場合はフォルダをエラーフォルダに移動しメッセージを表示
             AddLog(ErrorMessage)
+            path1 = dir1 + "/" + folderName 
+            path2 = dir5 
+            new_path = shutil.move(path1, path2)
             messagebox.showerror('エラー', ErrorMessage)
     else:
         return
