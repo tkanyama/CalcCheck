@@ -1,4 +1,18 @@
 
+
+#==========================================================================================
+#   構造計算書の数値検査プログラムのサブルーチン（ver.0.01）
+#
+#           一般財団法人日本建築総合試験所
+#
+#               coded by T.Kanyama  2023/02
+#
+#==========================================================================================
+"""
+このプログラムは、構造判定センターに提出される構造計算書（PDF）の検定比（許容応力度に対する部材応力度の比）を精査し、
+設定した閾値（デフォルトは0.95）を超える部材を検出するプログラムのツールである。
+
+"""
 # pip install pdfminer
 from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
@@ -80,7 +94,7 @@ class CheckTool():
     #   表紙の文字から構造計算プログラムの種類とバージョンを読み取る関数
     #==================================================================================
 
-    def KindCheck(self, page, interpreter, device):
+    def CoverCheck(self, page, interpreter, device):
 
         interpreter.process_page(page)
         # １文字ずつのレイアウトデータを取得
@@ -202,7 +216,9 @@ class CheckTool():
             t1.append([tt2])
 
         for line in t1:
+            # 全角の'：'と'／'を半角に置換
             t2 = line[0].replace(" ","").replace("：",":").replace("／","/")
+
             if "プログラムの名称" in t2:
                 n = t2.find(":",0)
                 kind = t2[n+1:]
@@ -342,7 +358,13 @@ class CheckTool():
             t1.append([tt2])
 
         return t1 , CharData5
+    #*********************************************************************************
 
+
+    #==================================================================================
+    #   各ページの数値を検索し、閾値を超える数値を四角で囲んだPDFファイルを作成する関数
+    #   （SS7用の関数）
+    #==================================================================================
 
     def SS7(self, page, limit, interpreter, device,interpreter2, device2):
         #============================================================
@@ -890,8 +912,8 @@ class CheckTool():
                                 val = a
                                 print('val={:.2f}'.format(val))
 
-        if mode == "杭の検定表":
-            pageFlaf = False
+        elif mode == "杭の検定表":
+            pageFlag = False
 
 
         #=================================================================================================
@@ -1037,7 +1059,7 @@ class CheckTool():
                     print("page={}:".format(pageI), end="")
                     if pageI == 1 :
                         pageFlag = True
-                        kind, version = self.KindCheck(page, interpreter2, device2)
+                        kind, version = self.CoverCheck(page, interpreter2, device2)
                         print()
                         print("プログラムの名称：{}".format(kind))
                         print("プログラムのバーsジョン：{}".format(version))
@@ -1174,7 +1196,7 @@ class CheckTool():
 
 
 #==================================================================================
-#   このクラスをテストする場合のメインルーチン
+#   このクラスを単独でテストする場合のメインルーチン
 #==================================================================================
 
 if __name__ == '__main__':
