@@ -99,6 +99,8 @@ def CreateFolfer():
                     Message = "実行結果のログファイルの初期設定"
                     AddLog(Message)
 
+                    
+                messagebox.showinfo("確認", "作業フォルダの設定を行い、\nフォルダの情報を'init.json'に保存しました。")
                 flag1 = False
                 return False
                 
