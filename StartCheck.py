@@ -73,14 +73,19 @@ def CreateFolfer():
                 dir5 = fld + "/エラーフォルダ"
                 if not os.path.isdir(dir1):
                     os.mkdir(dir1)
+                #end if
                 if not os.path.isdir(dir2):
                     os.mkdir(dir2)
+                #end if
                 if not os.path.isdir(dir3):
                     os.mkdir(dir3)
+                #end if
                 if not os.path.isdir(dir4):
                     os.mkdir(dir4)
+                #end if
                 if not os.path.isdir(dir5):
                     os.mkdir(dir5)
+                #end if
 
 
                 pageData = {"処理前フォルダ": dir1, "処理後フォルダ": dir2, "ログ": dir3,
@@ -89,17 +94,20 @@ def CreateFolfer():
                 with open('init.json', 'w', encoding="utf-8") as fp:
                     json.dump(pageData, fp, indent=4, ensure_ascii=False)
                     fp.close()
+                #end with
 
                 para = {"数値の閾値": 0.95, "開始ページ": 2, "終了ページ": 0}
                 with open(dir4+'/'+paraFileName, 'w', encoding="utf-8") as fp:
                     json.dump(para, fp, indent=4, ensure_ascii=False)
                     fp.close()
+                #end with
 
                 if not os.path.isfile(dir5+'/'+runLogFile):
                     Message = "実行結果のログファイルの初期設定"
                     AddLog(Message)
+                #end if
 
-                    
+
                 messagebox.showinfo("確認", "作業フォルダの設定を行い、\nフォルダの情報を'init.json'に保存しました。")
                 flag1 = False
                 return False
@@ -107,7 +115,7 @@ def CreateFolfer():
             else:
                 flag1 = False
                 return False
-
+            #end if
 
         else:
             
@@ -119,15 +127,20 @@ def CreateFolfer():
             dir4 = json_load['パラメータファイルのテンプレート']
             dir5 = json_load['エラーフォルダ']
             if not os.path.isdir(dir1):
-                os.mkdir(dir1)
+                os.mkdir(dir1)  
+            #end if        
             if not os.path.isdir(dir2):
-                os.mkdir(dir2)
+                os.mkdir(dir2)  
+            #end if        
             if not os.path.isdir(dir3):
-                os.mkdir(dir3)
+                os.mkdir(dir3)  
+            #end if        
             if not os.path.isdir(dir4):
-                os.mkdir(dir4)          
+                os.mkdir(dir4)  
+            #end if                  
             if not os.path.isdir(dir5):
-                os.mkdir(dir5)          
+                os.mkdir(dir5)  
+            #end if        
             json_open.close()
 
             if not os.path.isfile(dir4+'/'+paraFileName):
@@ -135,10 +148,13 @@ def CreateFolfer():
                 with open(dir4+'/'+paraFileName, 'w') as fp:
                     json.dump(para, fp, indent=4, ensure_ascii=False)
                     fp.close()
+                #end with
+            #end if
             
             flag1 = True
                 
             return True
+        #end if
 
     except OSError as e:
         print(e)
@@ -161,6 +177,8 @@ def CreateFolfer():
         ErrorFlag = True
         flag1 = False
         return False
+    #end try
+#end def
     #*********************************************************************************
 
 
@@ -215,6 +233,7 @@ def RunCheck():
                             limit1 = 0.95
                             stpage = 2
                             edpage = 0   # 全ページ
+                        #end if
 
                         for file in files:
                             
@@ -237,6 +256,7 @@ def RunCheck():
                                     else:
                                         num = 0
                                         numflag = False
+                                    #end if
                                     
                                     if not os.path.isdir(path2 + "/" + outfolder):
                                         new_path = shutil.move(path1, path2 + "/" + outfolder)
@@ -248,19 +268,30 @@ def RunCheck():
                                                 newFolder = path2 + "/" + outfolder[:len(outfolder)-3] + "({})".format(num)
                                             else:
                                                 newFolder = path2 + "/" + outfolder + "({})".format(num)
+                                            #end if
                                             if not os.path.isdir(newFolder):
                                                 new_path = shutil.move(path1, newFolder)
                                                 break
+                                            #end if
+                                        #end while
+                                    #end if
 
                                     message = folderName + "/" + fname + ":フォルダの移動処理OK"
                                     AddLog(message)
+                                #end if
+                            #end if
+                        #next
                                     
                     else:
                         ErrorMessage += folderName + "にPDFファイルがありません\n"
                         ErrorFlag = True
                         flag1 = False
+                    #end if
+                #end if
+            #next
 
             AddLog("処理の終了")    
+        #end if
     
         t1 = time.time() - time_sta
         print("time = {} sec".format(t1))
@@ -285,6 +316,7 @@ def RunCheck():
         ErrorMessage += "原因不明のエラー\n"
         ErrorFlag = True
         flag1 = False
+    #end try
     #*********************************************************************************
 
 
@@ -363,7 +395,10 @@ def main():
                         kind = f.readline()
                         version = f.readline()
                         f.close()
+                    #end with
+                #end if
                 folderName1 = folderName
+            #end if
 
             t1 = '\nフォルダー名：' + folderName + '\nファイル名：' + fname
             t1 += '\nプログラム名：' + kind + 'バージョン：' + version
@@ -376,6 +411,7 @@ def main():
             # Static2["text"] = u'\n一般財団法人日本建築総合試験所{}'.format(i)
 
             time.sleep(1.0)
+        #end while
         
         if ErrorFlag:
             # 何らかのエラーで処理を中止した場合はフォルダをエラーフォルダに移動しメッセージを表示
@@ -404,16 +440,21 @@ def main():
                         newFolder = path2 + "/" + folderName[:len(folderName)-3] + "({})".format(num)
                     else:
                         newFolder = path2 + "/" + folderName + "({})".format(num)
+                    #end if
                     if not os.path.isdir(newFolder):
                         new_path = shutil.move(path1, newFolder)
                         break
+                    #end if
+                #end while
+            #end if
 
             messagebox.showerror('エラー', ErrorMessage)
-
+        #end if
                         
     else:
         return
-
+    #end if
+#end def
     #*********************************************************************************
 
 def AddLog(Message1):
@@ -428,10 +469,13 @@ def AddLog(Message1):
                 with open(dir3+'/'+runLogFile, 'a', encoding="utf-8") as fp:
                     print(Message, file=fp)
                     fp.close()
+                #end with
             else:
                 with open(dir3+'/'+runLogFile, 'w', encoding="utf-8") as fp:
                     print(Message, file=fp)
                     fp.close()
+                #end with
+            #end if
 
         except OSError as e:
             print(e)
@@ -446,6 +490,9 @@ def AddLog(Message1):
             ErrorMessage += "原因不明のエラー\n"
             ErrorFlag = True
             flag1 = False
+        #end try
+    #end if
+#end def
 
 
     #============================================================================

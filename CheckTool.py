@@ -54,6 +54,8 @@ def isfloat(s):
         return False
     else:
         return True
+    #end if
+#end def
 
 #============================================================================
 #  整数を表しているかどうかを判定する関数
@@ -65,6 +67,8 @@ def isint(s):
         return False
     else:
         return True
+    #end if
+#end def
 
 #============================================================================
 #
@@ -90,6 +94,7 @@ class CheckTool():
         # フォント登録
         pdfmetrics.registerFont(TTFont(self.fontname1, GEN_SHIN_GOTHIC_MEDIUM_TTF))
         pdfmetrics.registerFont(TTFont(self.fontname2, IPAEXG_TTF))
+    #end def
     #*********************************************************************************
 
 
@@ -111,6 +116,9 @@ class CheckTool():
                 m1 = lt.matrix
                 if m1[1] == 0.0 :  # 回転していない文字のみを抽出
                     CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #next
 
         # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
         CharData2=[]
@@ -121,9 +129,9 @@ class CheckTool():
             x1 = cdata[2]
             y0 = cdata[3]
             y1 = cdata[4]
-            
             CharData2.append(cdata)
             CY.append(int(y0))
+        #next
         
         # リスト「CY」から降順の並び替えインデックッスを取得
         y=np.argsort(np.array(CY))[::-1]
@@ -133,6 +141,7 @@ class CheckTool():
             # インデックスを用いて並べ替えた「CharData3」を作成
             for i in range(len(y)):
                 CharData3.append(CharData2[y[i]])
+            #next
 
             # 同じ高さのY座標毎にデータをまとめる２次元のリストを作成
             CharData4 = []
@@ -151,10 +160,15 @@ class CheckTool():
                         gy = int(f[3])
                         Fline = []
                         Fline.append(f)
+                    #end if
+                #end if
                 i += 1
+            #next
+
             # 仮のリストが残っている場合は、リストを「CharData4」を保存
             if len(Fline) >= 4:
                 CharData4.append(Fline)
+            #end if
 
             # 次にX座標の順番にデータを並び替える（昇順）
             t1 = []
@@ -163,6 +177,7 @@ class CheckTool():
                 CX = []         # 各データのX座標のデータリストを作成
                 for F2 in F1:
                     CX.append(F2[1])
+                #next
                 
                 # リスト「CX」から降順の並び替えインデックッスを取得
                 x=np.argsort(np.array(CX))
@@ -174,10 +189,13 @@ class CheckTool():
                     F3.append(F1[x[i]])
                     t3 = F1[x[i]][0]
                     t2 += t3
+                #next
                 # t1 += t2 + "\n"
                 t1.append([t2])
                 # print(t2,len(F3))
                 CharData5.append(F3)
+            #next
+        #end if
 
         CharData2 = []
         for lt in layout:
@@ -185,11 +203,17 @@ class CheckTool():
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
                 if lt.matrix[1] > 0.0 : # 正の回転している文字のみを抽出
                     CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #next
         for lt in layout:
             if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
                 if lt.matrix[1] < 0.0 : # 正の回転している文字のみを抽出
                     CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #next
 
         fline = []
         Sflag = False
@@ -214,10 +238,14 @@ class CheckTool():
                 else:
                     fline.append(F1)
                     tt2 += F1[0]
+                #end if
+            #end if
+        #next
 
         if len(fline)>0:
             CharData5.append(fline)
             t1.append([tt2])
+        #end if
 
         for line in t1:
             # 全角の'：'と'／'を半角に置換
@@ -230,8 +258,11 @@ class CheckTool():
                 n = t2.find(":",0)
                 version = t2[n+1:]
                 break
+            #end if
+        #next
         
         return kind , version
+    #end def
     #*********************************************************************************
 
 
@@ -252,6 +283,9 @@ class CheckTool():
                 m1 = lt.matrix
                 if m1[1] == 0.0 :  # 回転していない文字のみを抽出
                     CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #next
 
         # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
         CharData2=[]
@@ -265,6 +299,7 @@ class CheckTool():
             
             CharData2.append(cdata)
             CY.append(int(y0))
+        #next
         
         # リスト「CY」から降順の並び替えインデックッスを取得
         y=np.argsort(np.array(CY))[::-1]
@@ -274,6 +309,7 @@ class CheckTool():
             # インデックスを用いて並べ替えた「CharData3」を作成
             for i in range(len(y)):
                 CharData3.append(CharData2[y[i]])
+            #next
 
             # 同じ高さのY座標毎にデータをまとめる２次元のリストを作成
             CharData4 = []
@@ -292,10 +328,14 @@ class CheckTool():
                         gy = int(f[3])
                         Fline = []
                         Fline.append(f)
+                    #end if
+                #end if
                 i += 1
+            #next
             # 仮のリストが残っている場合は、リストを「CharData4」を保存
             if len(Fline) >= 4:
                 CharData4.append(Fline)
+            #end if
 
             # 次にX座標の順番にデータを並び替える（昇順）
             t1 = []
@@ -304,6 +344,7 @@ class CheckTool():
                 CX = []         # 各データのX座標のデータリストを作成
                 for F2 in F1:
                     CX.append(F2[1])
+                #next
                 
                 # リスト「CX」から降順の並び替えインデックッスを取得
                 x=np.argsort(np.array(CX))
@@ -315,10 +356,13 @@ class CheckTool():
                     F3.append(F1[x[i]])
                     t3 = F1[x[i]][0]
                     t2 += t3
+                #next
                 # t1 += t2 + "\n"
                 t1.append([t2])
                 # print(t2,len(F3))
                 CharData5.append(F3)
+            #next
+        #end if
 
         CharData2 = []
         for lt in layout:
@@ -326,11 +370,17 @@ class CheckTool():
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
                 if lt.matrix[1] > 0.0 : # 正の回転している文字のみを抽出
                     CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #nexr
         for lt in layout:
             if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
                 if lt.matrix[1] < 0.0 : # 正の回転している文字のみを抽出
                     CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end iuf
+        #next
         
         fline = []
         Sflag = False
@@ -345,7 +395,7 @@ class CheckTool():
                     fline.append(F1)
                     tt2 += F1[0]
                     Sflag = True
-                
+                #end if
             else:
                 if F1[0] == " ":
                     CharData5.append(fline)
@@ -356,12 +406,17 @@ class CheckTool():
                 else:
                     fline.append(F1)
                     tt2 += F1[0]
+                #end if
+            #end if
+        #next
 
         if len(fline)>0:
             CharData5.append(fline)
             t1.append([tt2])
+        #end if
 
         return t1 , CharData5
+    #end def
     #*********************************************************************************
 
 
@@ -405,21 +460,29 @@ class CheckTool():
                 if "柱の断面検定表"in texts :
                     柱_Flag = True
                     break
+                #end if
                 if  "梁の断面検定表"in texts:
                     梁_Flag = True
                     break
+                #end if
                 if "壁の断面検定表"in texts :                               
                     壁_Flag = True
                     break
+                #end if
                 if "断面算定表"in texts and "杭基礎"in texts:
                     杭_Flag = True
                     break
+                #end if
                 if "ブレースの断面検定表"in texts :
-                        ブレース_Flag = True
-                        break
+                    ブレース_Flag = True
+                    break
+                #end if
                 if "検定比図"in texts:
                     検定比図_Flag = True
                     break
+                #end if
+            #end if
+        #next
         
         if 壁_Flag:
             i=0
@@ -431,23 +494,33 @@ class CheckTool():
                         ブレース_Flag = True
                         壁_Flag = False
                         break
+                    #end if
+                #enf if
                 i += 1
                 if i>20:
                     break
-
+                #end if
+            #next
+        #end if
             
         if 検定比図_Flag:
             mode = "検定比図"
+        #end if
         if 柱_Flag :
             mode = "柱の検定表"
+        #end if
         if 梁_Flag :
             mode = "梁の検定表"
+        #end if
         if 壁_Flag :
             mode = "壁の検定表"
+        #end if
         if 杭_Flag :
             mode = "杭の検定表"
+        #end if
         if ブレース_Flag :
             mode = "ブレースの検定表"
+        #end if
 
 
         i = 0
@@ -459,22 +532,24 @@ class CheckTool():
                 if "RC柱"in texts or "RC梁"in texts:
                     B_kind = "RC造"
                     break
+                #end if
                 if "SRC柱"in texts or "SRC梁"in texts:
                     B_kind = "SRC造"
                     break
+                #end if
                 if "S柱"in texts or "S梁"in texts:
                     B_kind = "S造"
                     break
-            # i +=1
-            # if i>50:
-            #     break
-
+                #end if
+            #end if
+        #next
 
         if mode == "" :     # 該当しない場合はこのページの処理は飛ばす。
             print("No Data")
             return False,[]
         else:
             print(mode)
+        #end if
 
         #=================================================================================================
         #   検定比図のチェック
@@ -522,10 +597,12 @@ class CheckTool():
                                     else:
                                         yyy0 = CharLine[nn][3]
                                         yyy1 = CharLine[nn][4]
+                                    #end if
 
                                     if ln <=4 :
                                         xxx0 -= xd
                                         xxx1 += xd
+                                    #end if
                                     width3 = xxx1 - xxx0
                                     height3 = yyy1 - yyy0
                                     ResultData.append([a,[xxx0, yyy0, width3, height3],False])
@@ -533,9 +610,15 @@ class CheckTool():
                                     pageFlag = True
                                     val = a
                                     print('val={:.2f}'.format(val))
+                                #end if
+                            #end if
 
                             # 数値を検索を開始するを文字数分移動
                             st = nn + ln + 1
+                        #next
+                    #end if
+                #next
+            #end if
                 
         #=================================================================================================
         #   柱の検定表のチェック
@@ -632,8 +715,15 @@ class CheckTool():
                                             pageFlag = True
                                             val = a
                                             print('val={:.2f}'.format(val))
+                                        #end if
+                                    #end if
                                     
                                     st = t3.find(w1,st)+ len(w1)
+                                #next
+                            #end if
+                        #end if
+                    #next
+                #end if
             if B_kind == "S造":
                 # =======================================================
                 #   S造の柱の検定表
@@ -653,6 +743,7 @@ class CheckTool():
                                 n = t3.index(fword)
                                 c1 = CharData[i][n]
                                 zx0 = c1[1]
+                            #end if
                         else:
                             if kmode :
                                 
@@ -689,8 +780,18 @@ class CheckTool():
                                                     pageFlag = True
                                                     val = a
                                                     print('val={:.2f}'.format(val))
+                                                #end if
+                                            #end if
                                             
                                             st = t3.find(w1,st)+ len(w1)
+                                        #next
+                                    #end if
+                                #end if
+                            #end if
+                        #end if
+                    #next
+                #end if
+            #end if
 
 
         #=================================================================================================
@@ -740,11 +841,17 @@ class CheckTool():
                                             pageFlag = True
                                             val = a
                                             print('val={:.2f}'.format(val))
+                                        #end if
+                                    #end if
 
                                     # 数値を検索を開始するを文字数分移動
                                     st = t3.find(t5,st)+ len(t5)
                                     # st += ln
-
+                                #next
+                            #end if
+                        #end if
+                    #next
+                #end if
             if B_kind == "S造":
                 # =======================================================
                 #   S造の梁の検定表
@@ -765,6 +872,7 @@ class CheckTool():
                                 n = t3.index(fword) + len(fword)-1
                                 c1 = CharData[i][n]
                                 zx0 = c1[1]
+                            #end if
                         if kmode :
                             CharLine = CharData[i] # １行文のデータを読み込む
                             t4 = ""
@@ -773,6 +881,7 @@ class CheckTool():
                                 # kfwordより右側にある数値だけを検出する。
                                 if char[1]>=zx0 :
                                     t4 += char[0]
+                            #next
                             if t4 == "": # 
                                 kmode = False
                             else:
@@ -799,8 +908,16 @@ class CheckTool():
                                                 pageFlag = True
                                                 val = a
                                                 print('val={:.2f}'.format(val))
-                                        
+                                            #end if
+                                        #end if
                                         st = t3.find(w1,st)+ len(w1)
+                                    #next
+                                #end if
+                            #end if
+                        #end if
+                    #next
+                #end if
+            #end if
                                 
         #=================================================================================================
         #   耐力壁の検定表のチェック
@@ -916,6 +1033,11 @@ class CheckTool():
                                 pageFlag = True
                                 val = a
                                 print('val={:.2f}'.format(val))
+                            #end if
+                        #end if
+                    #end if
+                #end while
+            #end if
 
         elif mode == "杭の検定表":
             pageFlag = False
@@ -955,8 +1077,11 @@ class CheckTool():
                                 # kmodeの時には「検定比」の下にある数値だけを検出する。
                                 if char[1]>=zx0 :
                                     t4 += char[0]
+                                #end if
+                            #next
                             if t4 == "" :
                                 kmode = False
+                            #end if
 
                             if isfloat(t4): # 切り取った文字が数値の場合の処理
                                 st = 0
@@ -982,12 +1107,22 @@ class CheckTool():
                                                 pageFlag = True
                                                 val = a
                                                 print('val={:.2f}'.format(val))
+                                            #end if
+                                        #end if
                                         
                                         st = t3.find(w1,st)+ len(w1)
+                                    #next
+                                #end if
+                            #end if
+                        #end if
+                    #next
+            #end if
+        #end if
         
         #==========================================================================
         #  検出結果を出力する
         return pageFlag, ResultData
+    #end def
     #*********************************************************************************
 
 
@@ -1003,6 +1138,7 @@ class CheckTool():
 
         if filename =="" :
             return False
+        #end if
 
         pdf_file = filename
         pdf_out_file = os.path.splitext(pdf_file)[0] + '[検出結果(閾値={:.2f}'.format(limit)+')].pdf'
@@ -1021,6 +1157,7 @@ class CheckTool():
                     page_xmax = float(page.mediabox.upper_right[0])
                     page_ymax = float(page.mediabox.upper_right[1])
                     PaperSize.append([page_xmax - page_xmin , page_ymax - page_ymin])
+            #end with
         except OSError as e:
             print(e)
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
@@ -1028,6 +1165,7 @@ class CheckTool():
         except:
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
             return False, kind, version
+        #end try
         
         #=============================================================
         if stpage <= 0 :      # 検索を開始する最初のページ
@@ -1036,6 +1174,7 @@ class CheckTool():
             startpage = PageMax-1
         else:
             startpage = stpage
+        #end if
 
         if edpage <= 0 :  # 検索を終了する最後のページ
             endpage = PageMax 
@@ -1043,6 +1182,7 @@ class CheckTool():
             endpage = PageMax
         else:
             endpage = edpage
+        #end if
 
         # PDFMinerのツールの準備
         resourceManager = PDFResourceManager()
@@ -1082,8 +1222,10 @@ class CheckTool():
                         if pageI < startpage:
                             print()
                             continue
+                        #end if
                         if pageI > endpage:
                             break
+                        #end if
 
                         if kind == "SuperBuild/SS7":
                             #============================================================
@@ -1101,12 +1243,16 @@ class CheckTool():
                             # 構造計算書の種類が不明の場合は処理を中止
                             #============================================================
                             return False
+                        #end if
 
                     if pageFlag : 
                         pageNo.append(pageI)
                         pageResultData.append(ResultData)
+                    #end if
+                #next
 
                 fp.close()
+            # end with
 
         except OSError as e:
             print(e)
@@ -1115,6 +1261,7 @@ class CheckTool():
         except:
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
             return False
+        #end try
 
 
         # 使用したデバイスをクローズ
@@ -1186,9 +1333,13 @@ class CheckTool():
                             cc.setFont(font_name, 7)
                             t2 = " {:.2f}".format(a)
                             cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                        #end if
+                    #next
+                #end if
 
                 # ページデータの確定
                 cc.showPage()
+            # next
 
             # PDFの保存
             cc.save()
@@ -1205,9 +1356,12 @@ class CheckTool():
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
             return False
 
+        #end try
+
         # すべての処理がエラーなく終了したのでTrueを返す。
         return True
-        
+
+    #end def    
     #*********************************************************************************
 
 
