@@ -43,6 +43,8 @@ dir5 = ""           # エラーデータのフォルダー
 paraFileName = "para.json" # パラメータファイルの名称
 runLogFile = "処理結果ログ.txt"
 systemLogFile = "system.log"
+# kind = ""
+# version = ""
 
 #============================================================================
 #  作業フォルダーの設定データ（init.json）読込
@@ -55,6 +57,7 @@ systemLogFile = "system.log"
 def CreateFolfer():
     global flag1, fname, dir1, dir2, dir3, dir4, dir5, folderName, paraFileName
     global ErrorFlag, ErrorMessage, runLogFile, systemLogFile
+
     try:
         # CalcNames = [["SS7", "CheckTool"], ["その他", "CheckTool"]]
         initFile = "init.json"
@@ -127,22 +130,9 @@ def CreateFolfer():
 
             if not os.path.isfile(dir4+'/'+paraFileName):
                 para = {"数値の閾値": 0.95, "開始ページ": 2, "終了ページ": 0}
-                try:
-                    with open(dir4+'/'+paraFileName, 'w') as fp:
-                        json.dump(para, fp, indent=4, ensure_ascii=False)
-                        fp.close()
-                except OSError as e:
-                    print(e)
-                    logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-                    ErrorMessage += "パラメータファイルの読込エラー\n"
-                    ErrorFlag = True
-                    flag1 = False
-                except:
-                    print("")
-                    logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-                    ErrorMessage += "パラメータファイルの読込エラー\n"
-                    ErrorFlag = True
-                    flag1 = False
+                with open(dir4+'/'+paraFileName, 'w') as fp:
+                    json.dump(para, fp, indent=4, ensure_ascii=False)
+                    fp.close()
             
             flag1 = True
                 
@@ -150,8 +140,15 @@ def CreateFolfer():
 
     except OSError as e:
         print(e)
-        logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
+        logging.exception(sys.exc_info())#エラーをlog.txtに書き込む　json.decoder.JSONDecodeError
         ErrorMessage += "システムエラー\n"
+        ErrorFlag = True
+        flag1 = False
+        return False
+    except json.JSONDecodeError as jde:
+        print(sys.exc_info())
+        logging.exception(sys.exc_info())#エラーをlog.txtに書き込む　json.decoder.JSONDecodeError
+        ErrorMessage += "パラメータファイルの読込エラー\n"
         ErrorFlag = True
         flag1 = False
         return False
@@ -273,6 +270,12 @@ def RunCheck():
         ErrorMessage += "システムエラー\n"
         ErrorFlag = True
         flag1 = False
+    except json.JSONDecodeError as jde:
+        print(sys.exc_info())
+        logging.exception(sys.exc_info())#エラーをlog.txtに書き込む　json.decoder.JSONDecodeError
+        ErrorMessage += "パラメータファイルの読込エラー\n"
+        ErrorFlag = True
+        flag1 = False
         
     except:
         print("")
@@ -343,13 +346,26 @@ def main():
         ErrorFlag = False
         ErrorMessage = ""
         # i = 0
+        folderName1 = ""
+        kind = ""
+        version = ""
         while flag1:
             root.update()
             # now_h=datetime.now().hour
             # now_s=datetime.now().second
             # now_m=datetime.now().minute
             # now_time=str(now_h)+":"+str(now_m)+":"+str(now_s)
-            Static3["text"] = '\n\nフォルダー名：' + folderName + '\n\nファイル名：' + fname
+            if folderName != folderName1:
+                if os.path.isfile('./kind.txt'):
+                    with open('./kind.txt') as f:
+                        kind = f.readline()
+                        version = f.readline()
+                        f.close()
+                folderName1 = folderName
+
+            t1 = '\nフォルダー名：' + folderName + '\nファイル名：' + fname
+            t1 += '\nプログラム名：' + kind + 'バージョン：' + version
+            Static3["text"] = t1
             Static4["text"] = "\n経過時間：{:7.0f}秒".format(time.time() - time_sta)
             # canvas.create_text(lw/2,200,text=now_time,font=("",25,""),tag='Y') #タグを入れることで更新できるようにする．
             # canvas.update()
@@ -364,8 +380,35 @@ def main():
             AddLog(ErrorMessage)
             path1 = dir1 + "/" + folderName 
             path2 = dir5 
-            new_path = shutil.move(path1, path2)
+            # new_path = shutil.move(path1, path2)
+            # messagebox.showerror('エラー', ErrorMessage)
+
+            # フォルダー名の最後の3文字が (n) の場合は何番目であるか
+            t1 = folderName[len(folderName)-3:]
+            if t1[0] == "(" and t1[len(t1)-1] == ")" :
+                num = int(t1.replace("(","").replace(")",""))
+                numflag = True
+            else:
+                num = 0
+                numflag = False
+
+            if not os.path.isdir(path2 + "/" + folderName):
+                new_path = shutil.move(path1, path2 )
+            else:
+                while True:
+                    # 同じ名前にならないよう繰り返す
+                    num += 1
+                    if numflag :
+                        newFolder = path2 + "/" + folderName[:len(folderName)-3] + "({})".format(num)
+                    else:
+                        newFolder = path2 + "/" + folderName + "({})".format(num)
+                    if not os.path.isdir(newFolder):
+                        new_path = shutil.move(path1, newFolder)
+                        break
+
             messagebox.showerror('エラー', ErrorMessage)
+
+                        
     else:
         return
 

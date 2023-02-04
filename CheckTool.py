@@ -41,6 +41,9 @@ import sys
 import numpy as np
 import logging
 
+kind = ""
+version = ""
+
 #============================================================================
 #  浮動小数点数値を表しているかどうかを判定する関数
 #============================================================================
@@ -95,6 +98,7 @@ class CheckTool():
     #==================================================================================
 
     def CoverCheck(self, page, interpreter, device):
+        global kind, version
 
         interpreter.process_page(page)
         # １文字ずつのレイアウトデータを取得
@@ -367,6 +371,7 @@ class CheckTool():
     #==================================================================================
 
     def SS7(self, page, limit, interpreter, device,interpreter2, device2):
+        
         #============================================================
         # 構造計算書がSS7の場合の処理
         #============================================================
@@ -994,7 +999,8 @@ class CheckTool():
     def CheckTool(self,filename, limit=0.95 ,stpage=0, edpage=0):
         global flag1, fname, dir1, dir2, dir3, dir4, dir5, folderName, paraFileName
         global ErrorFlag, ErrorMessage
-    
+        global kind, verion
+
         if filename =="" :
             return False
 
@@ -1018,10 +1024,10 @@ class CheckTool():
         except OSError as e:
             print(e)
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-            return False
+            return False, kind, version
         except:
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-            return False
+            return False, kind, version
         
         #=============================================================
         if stpage <= 0 :      # 検索を開始する最初のページ
@@ -1065,7 +1071,12 @@ class CheckTool():
                         print()
                         print("プログラムの名称：{}".format(kind))
                         print("プログラムのバーsジョン：{}".format(version))
-                        
+
+                        with open("./kind.txt", 'w', encoding="utf-8") as fp2:
+                            print(kind, file=fp2)
+                            print(version, file=fp2)
+                            fp2.close()
+
                     else:
 
                         if pageI < startpage:
@@ -1100,10 +1111,10 @@ class CheckTool():
         except OSError as e:
             print(e)
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-            return 
+            return False
         except:
             logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-            return
+            return False
 
 
         # 使用したデバイスをクローズ
@@ -1205,7 +1216,7 @@ class CheckTool():
 #==================================================================================
 
 if __name__ == '__main__':
-
+    
     time_sta = time.time()  # 開始時刻の記録
 
     CT = CheckTool()
@@ -1234,7 +1245,6 @@ if __name__ == '__main__':
     # edpage = 0
     # limit = 0.70
     # filename = "サンプル計算書(3)抜粋.pdf"
-
 
     if CT.CheckTool(filename,limit=limit,stpage=stpage,edpage=edpage):
         print("OK")
