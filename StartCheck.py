@@ -314,14 +314,14 @@ def main():
     
         Width = 800
         Height = 600
-        root.title(u"Calculation Cheet Check")
+        root.title(u"Calculation Sheet Check")
         root.geometry("800x600")
         root.geometry("{}x{}".format(Width,Height))
 
         Static1 = tk.Label(text=u'\n構造計算書の数値検索プログラム', font=("MSゴシック", "28", "bold"))
         Static1.pack()
 
-        Static2 = tk.Label(text=u'\n一般財団法人日本建築総合試験所', font=("MSゴシック", "28", "bold"))
+        Static2 = tk.Label(text=u'\n一般財団法人日本建築総合試験所\n構造判定センター', font=("MSゴシック", "28", "bold"))
         Static2.pack()
 
         Static3 = tk.Label(text=u'\n\nファイル名：\n\nファイル名：', font=("MSゴシック", "28", "bold"))
