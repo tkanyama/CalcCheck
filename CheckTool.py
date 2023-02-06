@@ -1154,7 +1154,7 @@ class CheckTool():
             if isinstance(lt, LTTextContainer):
                 texts = lt.get_text()
                 if "断面検定表"in texts or "検定比図" in texts :
-                    検定比_Flag = Trues
+                    検定比_Flag = True
                     break
             #end if
         #next
