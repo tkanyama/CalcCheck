@@ -102,9 +102,9 @@ def CreateFolfer():
                     fp.close()
                 #end with
 
-                if not os.path.isfile(dir5+'/'+runLogFile):
-                    Message = "実行結果のログファイルの初期設定"
-                    AddLog(Message)
+                # if not os.path.isfile(dir5+'/'+runLogFile):
+                Message = "実行結果のログファイルの初期設定"
+                AddLog(Message)
                 #end if
 
 

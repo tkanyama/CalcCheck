@@ -246,7 +246,8 @@ class CheckTool():
             CharData5.append(fline)
             t1.append([tt2])
         #end if
-
+        kind ="不明"
+        vesion = "不明"
         for line in t1:
             # 全角の'：'と'／'を半角に置換
             t2 = line[0].replace(" ","").replace("：",":").replace("／","/")
@@ -1125,6 +1126,121 @@ class CheckTool():
     #end def
     #*********************************************************************************
 
+    def OtherSheet(self, page, limit, interpreter, device,interpreter2, device2):
+        
+        #============================================================
+        # 構造計算書が不明の場合の処理
+        #============================================================
+        pageFlag = False
+        ResultData = []
+        limit1 = limit
+        limit2 = limit
+        limit3 = limit
+        interpreter.process_page(page)
+        layout = device.get_result()
+        #
+        #   このページに「断面検定表」、「検定比図」の
+        #   文字が含まれている場合のみ数値の検索を行う。
+        #
+        
+
+        検定比_Flag = False
+
+        xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
+
+        mode = ""
+        for lt in layout:
+            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+            if isinstance(lt, LTTextContainer):
+                texts = lt.get_text()
+                if "断面検定表"in texts or "検定比図" in texts :
+                    検定比_Flag = Trues
+                    break
+            #end if
+        #next
+
+        if not 検定比_Flag  :     # 該当しない場合はこのページの処理は飛ばす。
+            print("No Data")
+            return False,[]
+        # else:
+        #     print(mode)
+        #end if
+
+        #=================================================================================================
+        #   検定比図のチェック
+        #=================================================================================================
+        
+        if 検定比_Flag  :
+
+            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+
+            if len(CharLines) > 0:
+                i = -1
+                for line in CharLines:
+                    i += 1
+                    t3 = line[0]
+                    CharLine = CharData[i] # １行文のデータを読み込む
+                    
+                    # if "検定比" in t3 : # 「検定比」が現れた場合の処理
+                    # print(t3)
+                    st = 0
+                    t4 = t3.split()            # 文字列を空白で分割
+                    if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
+                        for t5 in t4:
+                            t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
+                            nn = t3.find(t6,st)   # 数値の文字位置を検索
+                            ln = len(t6)
+
+                            # カッコがある場合は左右１文字ずつ追加
+                            if "(" in t5:
+                                xn = 1
+                            else:
+                                xn = 0
+
+                            if isfloat(t6):
+                                a = float(t6)
+                                if a>=limit1 and a<1.0:
+                                    # 数値がlimit以上の場合はデータに登録
+                                    xxx0 = CharLine[nn-xn][1]
+                                    xxx1 = CharLine[nn+ln+xn-1][2]
+                                    if CharLine[nn][5][1] > 0.0:
+                                        yyy0 = CharLine[nn][3] - 1.0
+                                        yyy1 = CharLine[nn+ln+xn-1][4] + 1.0
+                                    elif CharLine[nn][5][1] < 0.0:
+                                        yyy0 = CharLine[nn+ln+xn-1][3] - 2.0
+                                        yyy1 = CharLine[nn][4] + 2.0
+                                    else:
+                                        yyy0 = CharLine[nn][3]
+                                        yyy1 = CharLine[nn][4]
+                                    #end if
+
+                                    if ln <=4 :
+                                        xxx0 -= xd
+                                        xxx1 += xd
+                                    #end if
+                                    width3 = xxx1 - xxx0
+                                    height3 = yyy1 - yyy0
+                                    ResultData.append([a,[xxx0, yyy0, width3, height3],False])
+                                    flag = True
+                                    pageFlag = True
+                                    val = a
+                                    print('val={:.2f}'.format(val))
+                                #end if
+                            #end if
+
+                            # 数値を検索を開始するを文字数分移動
+                            st = nn + ln + 1
+                        #next
+                    #end if
+                #next
+            #end if
+        # #end if
+        
+        #==========================================================================
+        #  検出結果を出力する
+        return pageFlag, ResultData
+    #end def
+    #*********************************************************************************
 
 
     #============================================================================
@@ -1238,11 +1354,14 @@ class CheckTool():
                         # elif kind == "****":
                         #     pageFlag, ResultData = self.***(page, limit, interpreter, device, interpreter2, device2)
 
-                        elif kind == "":
+                        else:
                             #============================================================
-                            # 構造計算書の種類が不明の場合は処理を中止
+                            # 構造計算書の種類が不明の場合はフォーマットを無視して数値のみを検出
                             #============================================================
-                            return False
+
+                            pageFlag, ResultData = self.OtherSheet(page, limit, interpreter, device, interpreter2, device2)
+
+                            # return False
                         #end if
 
                     if pageFlag : 
