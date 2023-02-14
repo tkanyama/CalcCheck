@@ -651,6 +651,302 @@ class CheckTool():
     #end def
     #*********************************************************************************
 
+
+
+    def BeamMemberSearch(self,CharLinesH , CharDataH, CharLinesV , CharDataV):
+        # X1の文字がある行を検索
+        Xst = []
+        i = -1
+        for line in CharLinesH:
+            print(line[0])
+            i += 1
+            if "X1" in line[0]:
+                Xst.append(i)
+            #end if
+        #next
+        Xst.append(len(CharDataH))
+
+        
+        for k in range(len(Xst)-1):
+            #各階の床伏図
+
+            stline = Xst[k]-2
+            edline = Xst[k+1]-2
+            X = []
+            Xname = []
+            Y = []
+            Yname = []
+            Xlength1 = 0
+            Xlength2 = []
+            Scale = 1
+            ymin = CharDataH[stline][0][3]
+            ymax = CharDataH[edline][0][4]
+
+            for i in range(stline,edline):
+                # i += 1
+                line = CharLinesH[i][0]
+                print(line)
+                items = line.split()
+                line2 = line.replace(" ","")
+                st = 0
+                for item in items:
+                    if re.match('X\d+', item):  # X1,X2,・・・・X通りの座標
+                        CharData = CharDataH[i]            
+                        n = line2.find(item, st)
+                        x0 = CharData[n][1]
+                        x1 = CharData[n+len(item)-1][2]
+                        X.append((x0+x1)/2.0)
+                        Xname.append(item)
+                        st = n + len(item)
+
+                    elif re.match('\d+FL\S+', item) or re.match('RFL\S+', item):   # 階高
+                        FloorName = item.replace("層","")
+
+                    elif re.match('S=\d+/\d+', item):   # スケールの読取り
+                        n = line2.find("/",st)
+                        Scale = int(line2[n+1:])
+                        st = n + len(item)
+                            
+                    elif re.match('\d+', item):     # X方向寸法の読取り
+                        if isint(item):
+                            if len(items)>1:    # 寸法が複数横並びの場合は柱間
+                                if int(item)>=1000:
+                                    Xlength2.append(int(item))
+                                #end if
+                            else:               # 寸法がひとつの場合は合計寸法
+                                if int(item)>=1000:
+                                    Xlength1 = int(item)
+                                #end if
+                            #end if
+                        #end if
+
+                    elif re.match('Y\d+', item):  # Y1,Y2,・・・・Y通りの座標
+                        CharData = CharDataH[i]            
+                        n = line2.find(item, st)
+                        y0 = CharData[n][3]
+                        y1 = CharData[n][4]
+                        Y.append((y0+y1)/2.0)
+                        Yname.append(item)
+                        st = n + len(item)
+                    #end if
+                #next
+            #next
+
+            Ylength1 = 0
+            Ylength2 = []
+            for i in range(len(CharLinesV)):
+                line = ""
+                yy= CharDataV[i][0][4]
+                for Char in CharDataV[i]:
+                    if Char[3]>=ymin and Char[4]<=ymax:                       
+                        if Char[3]>yy+7:
+                            line += " "
+                        line += Char[0]
+                        yy = Char[4]
+                    #end if
+                #next
+                # line = CharLinesV[i][0]
+                print(line)
+                items = line.split()
+                line2 = line.replace(" ","")
+                st = 0
+                for item in items:
+                    if re.match('\d+', item):     # Y方向寸法の読取り
+                        if isint(item):
+                            if len(items)>1:    # 寸法が複数横並びの場合は柱間
+                                if int(item)>=1000:
+                                    Ylength2.append(int(item))
+                                #end if
+                            else:               # 寸法がひとつの場合は合計寸法
+                                if int(item)>=1000:
+                                    Ylength1 = int(item)
+                                #end if
+                            #end if
+                        #end if
+
+            # 部材記号と部材長、
+            for i in range(stline,edline):
+                # i += 1
+                line = CharLinesH[i][0]
+                print(line)
+                items = line.split()
+                line2 = line.replace(" ","")
+                st = 0
+                for item in items:
+                    CharData = CharDataH[i]            
+                    n = line2.find(item, st)
+                    x0 = CharData[n][1]
+                    x1 = CharData[n+len(item)-1][2]
+                    xm = (x0+x1)/2.0
+                    y0 = CharData[n][3]
+                    y1 = CharData[n+len(item)-1][4]
+                    ym = (y0+y1)/2.0
+                    st = n + len(item)
+                    # if re.match('\d+G\d+', item) or re.match('-\d+G\d+', item) or re.match('B\d+', item) or re.match('RG\d+', item) or re.match('-RG\d+', item):     # 大梁
+                    if re.match('\S*\d+G\d+', item) or re.match('B\d+', item) or re.match('\S*RG\d+', item) or re.match('\S*FG\d+', item) :     # 大梁
+                        if len(items)==1: 
+                            xposition = Xname[0]+"-"+Xname[len(Xname)-1]
+                            j=-1
+                            yposition = ""
+                            for y in Y:
+                                j += 1
+                                if ym <= y + 7 and ym>=y-7:
+                                    yposition = Yname[j]
+                                    break
+                                #end if
+                            #next
+                            
+                            if not item in self.memberSpan:
+                                d1 = [[str(Xlength1),FloorName,xposition,yposition]] 
+                                self.memberSpan[item] = d1
+                                break
+                            else:
+                                d1 = self.memberSpan[item]
+                                d2= d1
+                                d2.append([str(Xlength1),FloorName, xposition,yposition])
+                                # d3 = [d1[0],d2]
+                                self.memberSpan[item] = d2
+                                break
+                            #end if
+                        else:
+                            # CharData = CharDataH[i]            
+                            # n = line2.find(item, st)
+                            # x0 = CharData[n][1]
+                            # x1 = CharData[n+len(item)-1][2]
+                            item2 = item.replace("-","")
+                            for j in range(len(X)-1):
+                                if x0 > X[j] and x1 < X[j+1]:
+                                    xlen = Xlength2[j]
+                                    xposition = Xname[j]+"-"+Xname[j+1]
+                                    jj=-1
+                                    yposition = ""
+                                    for y in Y:
+                                        jj += 1
+                                        if ym <= y + 5 and ym>=y-5:
+                                            yposition = Yname[jj]
+                                            break
+                                        #end if
+                                    #next
+                                    if not item2 in self.memberSpan:
+                                        d1 = [[str(xlen),FloorName, xposition,yposition]]
+                                        self.memberSpan[item2] = d1
+                                        # self.memberSpan[item2] = str(Xlength2[j])
+                                        break
+                                    else:
+                                        d1 = self.memberSpan[item2]
+                                        d2 = d1
+                                        d2.append([str(xlen),FloorName,xposition,yposition])
+                                        # d3 = [d1[0],d2]
+                                        self.memberSpan[item2] = d2
+                                        break
+                                #end if
+                            #next
+                        #end if
+                    #end if
+                #next
+            #next
+
+            # Ylength1 = 0
+            # Ylength2 = []
+            for i in range(len(CharLinesV)):
+                line = ""
+                yy= CharDataV[i][0][4]
+                for Char in CharDataV[i]:
+                    if Char[3]>=ymin and Char[4]<=ymax:                       
+                        if Char[3]>yy+7:
+                            line += " "
+                        line += Char[0]
+                        yy = Char[4]
+                    #end if
+                #next
+                # line = CharLinesV[i][0]
+                print(line)
+                items = line.split()
+                line2 = line.replace(" ","")
+                st = 0
+                for item in items:
+                    CharData = CharDataV[i]            
+                    n = line2.find(item, st)
+                    x0 = CharData[n][1]
+                    x1 = CharData[n+len(item)-1][2]
+                    xm = (x0+x1)/2.0
+                    y0 = CharData[n][3]
+                    y1 = CharData[n+len(item)-1][4]
+                    ym = (y0+y1)/2.0
+                    st = n + len(item)
+
+                    if re.match('\S*\d+G\d+', item) or re.match('B\d+', item) or re.match('\S*RG\d+', item) or re.match('\S*FG\d+', item):     # 大梁、小梁
+                        if len(items)==1:
+
+                            yposition = Yname[0]+"-"+Yname[len(Yname)-1]
+                            xposition = ""
+                            for j in range(len(X)):
+                                if xm <= X[j] + 20 and xm >= X[j] -20:
+                                    xposition = Xname[j]
+                                    break
+                                #end if
+                            #next
+                            for j in range(len(X)-1):    
+                                if xm <= (X[j]+X[j+1])/2.0 + 20 and xm >= (X[j]+X[j+1])/2.0 - 20:
+                                    xposition = Xname[j]+"-"+Xname[j+1]
+                                    break
+                                #end if
+                            #next
+                            if not item in self.memberSpan:
+                                d1 = [[str(Ylength1),FloorName, xposition,yposition]]
+                                self.memberSpan[item] = d1
+                                break
+                            else:
+                                d1 = self.memberSpan[item]
+                                d2= d1
+                                d2.append([str(Ylength1),FloorName, xposition,yposition])
+                                # d3 = [d1[0],d2]
+                                self.memberSpan[item] = d2
+                                break
+                            #end if
+                        else:
+                            
+                            for j in range(len(X)-1):
+                                if y0 > Y[j] and y1 < Y[j+1]:
+                                    ylen = Ylength2[j]
+                                    yposition = Yname[j]+"-"+Yname[j+1]
+                                    xposition = ""
+                                    for jj in range(len(X)):
+                                        if xm <= X[jj] + 7 and xm >= X[jj] -7:
+                                            xposition = Xname[jj]
+                                            break
+                                        elif xm <=(X[jj]+X[jj+1])/2.0 + 7 and xm >=(X[jj]+X[jj+1])/2.0 - 7:
+                                            xposition = Xname[jj]+"-"+Xname[jj+1]
+                                            break
+                                        #end if
+                                    #next
+
+                                    if not item in self.memberSpan:
+                                        d1 = [[str(ylen),FloorName, xposition,yposition]]
+                                        self.memberSpan[item] = d1
+                                        break
+                                    else:
+                                        d1 = self.memberSpan[item]
+                                        d2= d1
+                                        d2.append([str(ylen),FloorName, xposition,yposition])
+                                        # d3 = [d1[0],d2]
+                                        self.memberSpan[item] = d2
+                                        break
+                                    #end if
+                                #end if
+                            #next
+                        #end if
+                    #end if
+                #next
+            #next
+        #next
+
+
+
+
+
+
+
     #==================================================================================
     #   各ページの数値を検索し、閾値を超える数値を四角で囲んだPDFファイルを作成する関数
     #   （SS7用の関数）
@@ -798,289 +1094,9 @@ class CheckTool():
         
         if mode == "床伏図" :
             CharLinesH , CharDataH, CharLinesV , CharDataV = self.MakeCharPlus(page, interpreter2,device2)
-
-            # X1の文字がある行を検索
-            Xst = []
-            i = -1
-            for line in CharLinesH:
-                print(line[0])
-                i += 1
-                if "X1" in line[0]:
-                    Xst.append(i)
-                #end if
-            #next
-            Xst.append(len(CharDataH))
-
+            self.BeamMemberSearch(CharLinesH , CharDataH, CharLinesV , CharDataV)
+            print(self.memberSpan["RG1"])
             
-            for k in range(len(Xst)-1):
-                #各階の床伏図
-
-                stline = Xst[k]-2
-                edline = Xst[k+1]-2
-                X = []
-                Xname = []
-                Y = []
-                Yname = []
-                Xlength1 = 0
-                Xlength2 = []
-                Scale = 1
-                ymin = CharDataH[stline][0][3]
-                ymax = CharDataH[edline][0][4]
-
-                for i in range(stline,edline):
-                    # i += 1
-                    line = CharLinesH[i][0]
-                    print(line)
-                    items = line.split()
-                    line2 = line.replace(" ","")
-                    st = 0
-                    for item in items:
-                        if re.match('X\d+', item):  # X1,X2,・・・・X通りの座標
-                            CharData = CharDataH[i]            
-                            n = line2.find(item, st)
-                            x0 = CharData[n][1]
-                            x1 = CharData[n+len(item)-1][2]
-                            X.append((x0+x1)/2.0)
-                            Xname.append(item)
-                            st = n + len(item)
-
-                        elif re.match('\d+FL\S+', item):   # 階高
-                            FloorName = item
-
-                        elif re.match('S=\d+/\d+', item):   # スケールの読取り
-                            n = line2.find("/",st)
-                            Scale = int(line2[n+1:])
-                                
-                        elif re.match('\d+', item):     # X方向寸法の読取り
-                            if isint(item):
-                                if len(items)>1:    # 寸法が複数横並びの場合は柱間
-                                    if int(item)>=1000:
-                                        Xlength2.append(int(item))
-                                    #end if
-                                else:               # 寸法がひとつの場合は合計寸法
-                                    if int(item)>=1000:
-                                        Xlength1 = int(item)
-                                    #end if
-                                #end if
-                            #end if
-
-                        elif re.match('Y\d+', item):  # Y1,Y2,・・・・Y通りの座標
-                            CharData = CharDataH[i]            
-                            n = line2.find(item, st)
-                            y0 = CharData[n][3]
-                            y1 = CharData[n][4]
-                            Y.append((y0+y1)/2.0)
-                            Yname.append(item)
-                        #end if
-                    #next
-                #next
-
-                Ylength1 = 0
-                Ylength2 = []
-                for i in range(len(CharLinesV)):
-                    line = ""
-                    yy= CharDataV[i][0][4]
-                    for Char in CharDataV[i]:
-                        if Char[3]>=ymin and Char[4]<=ymax:                       
-                            if Char[3]>yy+7:
-                                line += " "
-                            line += Char[0]
-                            yy = Char[4]
-                        #end if
-                    #next
-                    # line = CharLinesV[i][0]
-                    print(line)
-                    items = line.split()
-                    line2 = line.replace(" ","")
-                    st = 0
-                    for item in items:
-                        if re.match('\d+', item):     # Y方向寸法の読取り
-                            if isint(item):
-                                if len(items)>1:    # 寸法が複数横並びの場合は柱間
-                                    if int(item)>=1000:
-                                        Ylength2.append(int(item))
-                                    #end if
-                                else:               # 寸法がひとつの場合は合計寸法
-                                    if int(item)>=1000:
-                                        Ylength1 = int(item)
-                                    #end if
-                                #end if
-                            #end if
-
-                # 部材記号と部材長、
-                for i in range(stline,edline):
-                    # i += 1
-                    line = CharLinesH[i][0]
-                    print(line)
-                    items = line.split()
-                    line2 = line.replace(" ","")
-                    st = 0
-                    for item in items:
-                        CharData = CharDataH[i]            
-                        n = line2.find(item, st)
-                        x0 = CharData[n][1]
-                        x1 = CharData[n+len(item)-1][2]
-                        xm = (x0+x1)/2.0
-                        y0 = CharData[n][3]
-                        y1 = CharData[n+len(item)-1][4]
-                        ym = (y0+y1)/2.0
-
-                        if re.match('\d+G\d+', item) or re.match('-\d+G\d+', item) or re.match('B\d+', item):     # 大梁
-                            if len(items)==1: 
-                                xposition = Xname[0]+"-"+Xname[len(Xname)-1]
-                                j=-1
-                                yposition = ""
-                                for y in Y:
-                                    j += 1
-                                    if ym <= y + 7 and ym>=y-7:
-                                        yposition = Yname[j]
-                                        break
-                                    #end if
-                                #next
-                                
-                                if not item in self.memberSpan:
-                                    d1 = [str(Xlength1),[[FloorName,xposition,yposition]]] 
-                                    self.memberSpan[item] = d1
-                                    break
-                                else:
-                                    d1 = self.memberSpan[item]
-                                    d2= d1[1]
-                                    d2.append([FloorName, xposition,yposition])
-                                    d3 = [d1[0],d2]
-                                    self.memberSpan[item] = d3
-                                    break
-                                #end if
-                            else:
-                                # CharData = CharDataH[i]            
-                                # n = line2.find(item, st)
-                                # x0 = CharData[n][1]
-                                # x1 = CharData[n+len(item)-1][2]
-                                item2 = item.replace("-","")
-                                for j in range(len(X)-1):
-                                    if x0 > X[j] and x1 < X[j+1]:
-                                        xlen = Xlength2[j]
-                                        xposition = Xname[j]+"-"+Xname[j+1]
-                                        jj=-1
-                                        yposition = ""
-                                        for y in Y:
-                                            jj += 1
-                                            if ym <= y + 5 and ym>=y-5:
-                                                yposition = Yname[jj]
-                                                break
-                                            #end if
-                                        #next
-                                        if not item2 in self.memberSpan:
-                                            d1 = [str(xlen),[[FloorName, xposition,yposition]]] 
-                                            self.memberSpan[item2] = d1
-                                            # self.memberSpan[item2] = str(Xlength2[j])
-                                            break
-                                        else:
-                                            d1 = self.memberSpan[item2]
-                                            d2= d1[1]
-                                            d2.append([FloorName,xposition,yposition])
-                                            d3 = [d1[0],d2]
-                                            self.memberSpan[item2] = d3
-                                            break
-                                    #end if
-                                #next
-                            #end if
-                        #end if
-                    #next
-                #next
-
-                # Ylength1 = 0
-                # Ylength2 = []
-                for i in range(len(CharLinesV)):
-                    line = ""
-                    yy= CharDataV[i][0][4]
-                    for Char in CharDataV[i]:
-                        if Char[3]>=ymin and Char[4]<=ymax:                       
-                            if Char[3]>yy+7:
-                                line += " "
-                            line += Char[0]
-                            yy = Char[4]
-                        #end if
-                    #next
-                    # line = CharLinesV[i][0]
-                    print(line)
-                    items = line.split()
-                    line2 = line.replace(" ","")
-                    st = 0
-                    for item in items:
-                        CharData = CharDataV[i]            
-                        n = line2.find(item, st)
-                        x0 = CharData[n][1]
-                        x1 = CharData[n+len(item)-1][2]
-                        xm = (x0+x1)/2.0
-                        y0 = CharData[n][3]
-                        y1 = CharData[n+len(item)-1][4]
-                        ym = (y0+y1)/2.0
-
-                        if re.match('\d+G\d+', item) or re.match('B\d+', item):     # 大梁、小梁
-                            if len(items)==1:
-
-                                yposition = Yname[0]+"-"+Yname[len(Yname)-1]
-                                xposition = ""
-                                for j in range(len(X)):
-                                    if xm <= X[j] + 7 and xm >= X[j] -7:
-                                        xposition = Xname[j]
-                                        break
-                                    #end if
-                                #next
-                                for j in range(len(X)-1):    
-                                    if xm <= (X[j]+X[j+1])/2.0 + 14 and xm >= (X[j]+X[j+1])/2.0 - 14:
-                                        xposition = Xname[j]+"-"+Xname[j+1]
-                                        break
-                                    #end if
-                                #next
-                                if not item in self.memberSpan:
-                                    d1 = [str(Ylength1),[[FloorName, xposition,yposition]]] 
-                                    self.memberSpan[item] = d1
-                                    break
-                                else:
-                                    d1 = self.memberSpan[item]
-                                    d2= d1[1]
-                                    d2.append([FloorName, xposition,yposition])
-                                    d3 = [d1[0],d2]
-                                    self.memberSpan[item] = d3
-                                    break
-                                #end if
-                            else:
-                                
-                                for j in range(len(X)-1):
-                                    if y0 > Y[j] and y1 < Y[j+1]:
-                                        ylen = Ylength2[j]
-                                        yposition = Yname[j]+"-"+Yname[j+1]
-                                        xposition = ""
-                                        for j in len(X):
-                                            if xm <= X[j] + 7 and xm >= X[j] -7:
-                                                xposition = Xname[j]
-                                                break
-                                            elif xm <=(X[j]+X[j+1])/2.0 + 7 and xm >=(X[j]+X[j+1])/2.0 - 7:
-                                                xposition = Xname[j]+"-"+Xname[j+1]
-                                                break
-                                            #end if
-                                        #next
-
-                                        if not item in self.memberSpan:
-                                            d1 = [str(Ylength1),[[FloorName, xposition,yposition]]] 
-                                            self.memberSpan[item] = d1
-                                            break
-                                        else:
-                                            d1 = self.memberSpan[item]
-                                            d2= d1[1]
-                                            d2.append([FloorName, xposition,yposition])
-                                            d3 = [d1[0],d2]
-                                            self.memberSpan[item] = d3
-                                            break
-                                        #end if
-                                    #end if
-                                #next
-                            #end if
-                        #end if
-                    #next
-                #next
-            #next
 
 
         #=================================================================================================
