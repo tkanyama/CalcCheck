@@ -84,7 +84,7 @@ class CheckTool():
     
     def __init__(self):
 
-        self.memberSpan = {}    # 部材記号と寸法の辞書
+        self.BeamMemberSpan = {}    # 部材符号と諸元データの辞書
         
         # 源真ゴシック等幅フォント
         # GEN_SHIN_GOTHIC_MEDIUM_TTF = "/Library/Fonts/GenShinGothic-Monospace-Medium.ttf"
@@ -328,7 +328,7 @@ class CheckTool():
                     if int(f[3])== gy:   # 同じY座標の場合は、リストに文字を追加
                         Fline.append(f)
                     else:           # Y座標が異なる場合は、リストを「CharData4」を保存し、仮のリストを初期化
-                        if len(Fline) >= 4:
+                        if len(Fline) >= 2:
                             CharData4.append(Fline)
                         gy = int(f[3])
                         Fline = []
@@ -360,7 +360,9 @@ class CheckTool():
                 for i in range(len(x)):
                     F3.append(F1[x[i]])
                     t3 = F1[x[i]][0]
-                    t2 += t3
+                    if t3 != " ":
+                        t2 += t3
+                    #end if
                 #next
                 # t1 += t2 + "\n"
                 t1.append([t2])
@@ -416,6 +418,7 @@ class CheckTool():
         #next
 
         if len(fline)>0:
+            tt2=tt2.replace(" ","").replace("　","")
             CharData5.append(fline)
             t1.append([tt2])
         #end if
@@ -425,8 +428,8 @@ class CheckTool():
     #*********************************************************************************
 
 #==================================================================================
-    #   各ページから１文字ずつの文字と座標データを抽出し、行毎の文字配列および座標配列を戻す関数
-    #==================================================================================
+#   各ページから１文字ずつの文字と座標データを抽出し、行毎の文字配列および座標配列を戻す関数
+#==================================================================================
 
     def MakeCharPlus(self, page, interpreter, device):
 
@@ -583,7 +586,7 @@ class CheckTool():
                     if int(f[1]) == gx :   # 同じY座標の場合は、リストに文字を追加
                         Fline.append(f)
                     else:           # Y座標が異なる場合は、リストを「CharData4」を保存し、仮のリストを初期化
-                        if len(Fline) >= 4:
+                        if len(Fline) >= 2:
                             CharData4.append(Fline)
                         gx = int(f[1])
                         Fline = []
@@ -593,7 +596,7 @@ class CheckTool():
                 i += 1
             #next
             # 仮のリストが残っている場合は、リストを「CharData4」を保存
-            if len(Fline) >= 4:
+            if len(Fline) >= 2:
                 CharData4.append(Fline)
             #end if
 
@@ -651,14 +654,15 @@ class CheckTool():
     #end def
     #*********************************************************************************
 
-
-
+#==================================================================================
+#   床伏図から部材の符号と配置を検出する関数
+#==================================================================================
     def BeamMemberSearch(self,CharLinesH , CharDataH, CharLinesV , CharDataV):
         # X1の文字がある行を検索
         Xst = []
         i = -1
         for line in CharLinesH:
-            print(line[0])
+            # print(line[0])
             i += 1
             if "X1" in line[0]:
                 Xst.append(i)
@@ -685,7 +689,7 @@ class CheckTool():
             for i in range(stline,edline):
                 # i += 1
                 line = CharLinesH[i][0]
-                print(line)
+                # print(line)
                 items = line.split()
                 line2 = line.replace(" ","")
                 st = 0
@@ -746,7 +750,7 @@ class CheckTool():
                     #end if
                 #next
                 # line = CharLinesV[i][0]
-                print(line)
+                # print(line)
                 items = line.split()
                 line2 = line.replace(" ","")
                 st = 0
@@ -768,7 +772,7 @@ class CheckTool():
             for i in range(stline,edline):
                 # i += 1
                 line = CharLinesH[i][0]
-                print(line)
+                # print(line)
                 items = line.split()
                 line2 = line.replace(" ","")
                 st = 0
@@ -796,17 +800,19 @@ class CheckTool():
                                 #end if
                             #next
                             
-                            if not item in self.memberSpan:
+                            if not item in self.BeamMemberSpan:
                                 d1 = [[str(Xlength1),FloorName,xposition,yposition]] 
-                                self.memberSpan[item] = d1
-                                break
+                                dic1 = {}
+                                dic1["配置"] = d1
+                                self.BeamMemberSpan[item] = dic1
+                                continue
                             else:
-                                d1 = self.memberSpan[item]
-                                d2= d1
+                                dic1 = self.BeamMemberSpan[item]
+                                d2= d1["配置"]
                                 d2.append([str(Xlength1),FloorName, xposition,yposition])
-                                # d3 = [d1[0],d2]
-                                self.memberSpan[item] = d2
-                                break
+                                dic1["配置"] = d2
+                                self.BeamMemberSpan[item] = dic1
+                                continue
                             #end if
                         else:
                             # CharData = CharDataH[i]            
@@ -824,21 +830,30 @@ class CheckTool():
                                         jj += 1
                                         if ym <= y + 5 and ym>=y-5:
                                             yposition = Yname[jj]
-                                            break
+                                            continue
                                         #end if
                                     #next
-                                    if not item2 in self.memberSpan:
+                                    if not item2 in self.BeamMemberSpan:
                                         d1 = [[str(xlen),FloorName, xposition,yposition]]
-                                        self.memberSpan[item2] = d1
+                                        dic1 = {}
+                                        dic1["配置"] = d1
+                                        self.BeamMemberSpan[item2] = dic1
+                                        # self.BeamMemberSpan[item2] = d1
                                         # self.memberSpan[item2] = str(Xlength2[j])
-                                        break
+                                        continue
                                     else:
-                                        d1 = self.memberSpan[item2]
-                                        d2 = d1
-                                        d2.append([str(xlen),FloorName,xposition,yposition])
-                                        # d3 = [d1[0],d2]
-                                        self.memberSpan[item2] = d2
-                                        break
+                                        dic1 = self.BeamMemberSpan[item2]
+                                        d2 = dic1["配置"]
+                                        d2.append([str(Xlength1),FloorName, xposition,yposition])
+                                        dic1["配置"] = d2
+                                        self.BeamMemberSpan[item2] = dic1
+                                
+                                        # d1 = self.BeamMemberSpan[item2]
+                                        # d2 = d1
+                                        # d2.append([str(xlen),FloorName,xposition,yposition])
+                                        # # d3 = [d1[0],d2]
+                                        # self.BeamMemberSpan[item2] = d2
+                                        continue
                                 #end if
                             #next
                         #end if
@@ -848,22 +863,25 @@ class CheckTool():
 
             # Ylength1 = 0
             # Ylength2 = []
+            st = 0
             for i in range(len(CharLinesV)):
                 line = ""
                 yy= CharDataV[i][0][4]
+                CharDataV2 = []                     # ここから修せ
                 for Char in CharDataV[i]:
                     if Char[3]>=ymin and Char[4]<=ymax:                       
                         if Char[3]>yy+7:
                             line += " "
                         line += Char[0]
+                        CharDataV2.append(Char)
                         yy = Char[4]
                     #end if
                 #next
                 # line = CharLinesV[i][0]
-                print(line)
+                # print(line)
                 items = line.split()
                 line2 = line.replace(" ","")
-                st = 0
+                # st = 0
                 for item in items:
                     CharData = CharDataV[i]            
                     n = line2.find(item, st)
@@ -892,45 +910,62 @@ class CheckTool():
                                     break
                                 #end if
                             #next
-                            if not item in self.memberSpan:
+                            if not item in self.BeamMemberSpan:
                                 d1 = [[str(Ylength1),FloorName, xposition,yposition]]
-                                self.memberSpan[item] = d1
-                                break
+                                dic1 = {}
+                                dic1["配置"] = d1
+                                self.BeamMemberSpan[item] = dic1
+                                # self.BeamMemberSpan[item] = d1
+                                continue
                             else:
-                                d1 = self.memberSpan[item]
-                                d2= d1
-                                d2.append([str(Ylength1),FloorName, xposition,yposition])
-                                # d3 = [d1[0],d2]
-                                self.memberSpan[item] = d2
-                                break
+                                dic1 = self.BeamMemberSpan[item]
+                                d2= dic1["配置"]
+                                d2.append([str(Xlength1),FloorName, xposition,yposition])
+                                dic1["配置"] = d2
+                                self.BeamMemberSpan[item] = dic1
+                                # d1 = self.BeamMemberSpan[item]
+                                # d2= d1
+                                # d2.append([str(Ylength1),FloorName, xposition,yposition])
+                                # # d3 = [d1[0],d2]
+                                # self.BeamMemberSpan[item] = d2
+                                continue
                             #end if
                         else:
                             
-                            for j in range(len(X)-1):
+                            for j in range(len(Y)-1):
                                 if y0 > Y[j] and y1 < Y[j+1]:
                                     ylen = Ylength2[j]
                                     yposition = Yname[j]+"-"+Yname[j+1]
                                     xposition = ""
-                                    for jj in range(len(X)):
+                                    for jj in range(len(X)-1):
                                         if xm <= X[jj] + 7 and xm >= X[jj] -7:
                                             xposition = Xname[jj]
-                                            break
+                                            continue
                                         elif xm <=(X[jj]+X[jj+1])/2.0 + 7 and xm >=(X[jj]+X[jj+1])/2.0 - 7:
                                             xposition = Xname[jj]+"-"+Xname[jj+1]
-                                            break
+                                            continue
                                         #end if
                                     #next
 
-                                    if not item in self.memberSpan:
+                                    if not item in self.BeamMemberSpan:
                                         d1 = [[str(ylen),FloorName, xposition,yposition]]
-                                        self.memberSpan[item] = d1
+                                        dic1 = {}
+                                        dic1["配置"] = d1
+                                        self.BeamMemberSpan[item] = dic1
+                                        # d1 = [[str(ylen),FloorName, xposition,yposition]]
+                                        # self.BeamMemberSpan[item] = d1
                                         break
                                     else:
-                                        d1 = self.memberSpan[item]
-                                        d2= d1
+                                        dic1 = self.BeamMemberSpan[item]
+                                        d2= dic1["配置"]
                                         d2.append([str(ylen),FloorName, xposition,yposition])
-                                        # d3 = [d1[0],d2]
-                                        self.memberSpan[item] = d2
+                                        dic1["配置"] = d2
+                                        self.BeamMemberSpan[item] = dic1
+                                        # d1 = self.BeamMemberSpan[item]
+                                        # d2= d1
+                                        # d2.append([str(ylen),FloorName, xposition,yposition])
+                                        # # d3 = [d1[0],d2]
+                                        # self.BeamMemberSpan[item] = d2
                                         break
                                     #end if
                                 #end if
@@ -977,6 +1012,7 @@ class CheckTool():
         杭_Flag = False
         検定比図_Flag = False
         床伏図_Flag = False
+        断面リスト_Flag = False
 
         xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
 
@@ -1011,6 +1047,10 @@ class CheckTool():
                 #end if
                 if "床伏図"in texts:
                     床伏図_Flag = True
+                    break
+                #end if
+                if "断面リスト"in texts:
+                    断面リスト_Flag = True
                     break
                 #end if
             #end if
@@ -1056,6 +1096,10 @@ class CheckTool():
         if 床伏図_Flag :
             mode = "床伏図"
         #end if
+        if 断面リスト_Flag :
+            mode = "断面リスト"
+        #end if
+
 
 
         
@@ -1095,9 +1139,381 @@ class CheckTool():
         if mode == "床伏図" :
             CharLinesH , CharDataH, CharLinesV , CharDataV = self.MakeCharPlus(page, interpreter2,device2)
             self.BeamMemberSearch(CharLinesH , CharDataH, CharLinesV , CharDataV)
-            print(self.memberSpan["RG1"])
-            
+            keys = list(self.BeamMemberSpan.keys())
+            for key in keys:
+                dic1 = self.BeamMemberSpan[key]
+                print(key,dic1)
 
+            a=0
+            # print(self.BeamMemberSpan)
+        
+        #=================================================================================================
+        #   断面リストのチェック
+        #=================================================================================================
+        
+        if mode == "断面リスト" :
+
+            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+
+            if len(CharLines) > 0:
+                ucount = 0
+                scount = 0
+                断面サイズ = []
+                主筋上端 = []
+                主筋下端 = []
+                材料上端 = []
+                材料下端 = []
+                かぶり上端 = []
+                かぶり下端 = []
+                あばら筋 = []
+                あばら筋材料 = []
+                memberName = []
+                itemsx = []
+                nameCenter = []
+                        
+
+                for i in range(len(CharLines)):
+                    
+                    line = CharLines[i][0]
+                    line2 = ""
+                    xx= CharData[i][0][2]
+                    for Char in CharData[i]:
+                        if Char[1]>xx+7:
+                            line2 += " "
+                        line2 += Char[0]
+                        xx = Char[2]
+                    #next
+                    items = line2.split()
+                    print(line)
+                    print(items)
+                    if len(items)>0:
+                        st = 0
+                        for item in items:
+                            n = line.find(item,st)
+                            x1 = CharData[i][n][1]
+                            x2 = CharData[i][n+len(item)-1][2]
+                            xm = (x1+x2)/2.0
+                            itemsx.append(xm)
+                            st = n + len(item)
+                            if re.match("G\d+\w*",item):   # G1,G11,G2等がある場合はその中央のX座標を取得
+                                nameCenter.append([item,xm])
+                            #end if
+                        #next
+                        if len(nameCenter)>0:
+                            memberN = len(nameCenter)   # 部材の数量
+                        #end if
+
+                        if "中央" in line  or "全断面" in line:
+                            itemCenter = []
+                            j = -1
+                            for item in items:
+                                j += 1
+                                if item == "端部" or item == "中央" or item == "左端" or item == "右端" or item == "全断面" :
+                                    itemCenter.append([item, itemsx[j]])
+                                #end if
+                            #next
+                            continue
+                        #end if
+
+                        if "符号名"in line:
+                            if len(断面サイズ)>0:
+                                a=0
+                                j = 0
+                                for names in memberName:
+                                    names2 = names.split(',')
+                                    dic1 = {}
+                                    # j += 1
+                                    item = itemCenter[j][0]
+                                    if item == "端部":
+                                        kind = ["端部","中央"]
+                                    elif item == "左端":
+                                        kind = ["左端","中央","右端"]
+                                    elif item == "全断面":
+                                        kind = ["全断面"]
+                                    #end if
+                                    kn = len(kind)
+                                    for k in range(kn):
+                                        dic2 = {}
+                                        dic2["断面サイズ"]= 断面サイズ[j+k]
+                                        dic2["主筋上端"]= 主筋上端[j+k]
+                                        dic2["主筋下端"]= 主筋下端[j+k]
+                                        dic2["材料上端"]= 材料上端[j+k]
+                                        dic2["材料下端"]= 材料下端[j+k]
+                                        dic2["かぶり上端"]= かぶり上端[j+k]
+                                        dic2["かぶり下端"]= かぶり下端[j+k]
+                                        dic2["あばら筋"]= あばら筋[j+k]
+                                        dic2["あばら筋材料"]= あばら筋材料[j+k]
+                                        dic1[kind[k]] = dic2
+                                    #next
+                                    j += kn
+                                    
+                                    print(names2)
+                                    for name in names2:
+                                        if name in self.BeamMemberSpan.keys():
+                                            dic0 = self.BeamMemberSpan[name]
+                                            dic0["断面諸元"] = dic1
+                                            dic0["断面種類"] = kind
+                                            self.BeamMemberSpan[name] = dic0
+                                        else:
+                                            dic0 = {}
+                                            dic0["断面諸元"] = dic1
+                                            dic0["断面種類"] = kind
+                                            self.BeamMemberSpan[name] = dic0
+                                        #end if
+                                    #next
+                                #next
+                            #end if
+
+                            ucount = 0
+                            scount = 0
+                            断面サイズ = []
+                            主筋上端 = []
+                            主筋下端 = []
+                            材料上端 = []
+                            材料下端 = []
+                            かぶり上端 = []
+                            かぶり下端 = []
+                            あばら筋 = []
+                            あばら筋材料 = []
+                            memberName = []
+                            for item in items:
+                                item2 = item.split()
+                                flag = True
+                                for item3 in item2:
+                                    if re.match("RG\d+",item3) or re.match("\d+G\d+",item3):   # 梁の符号パターンに合う場合は配列に記録
+                                        flag = flag and True
+                                    else:
+                                        flag = flag and False
+                                    #end if
+                                #next
+                                if flag :
+                                    memberName.append(item)
+                                #end if
+                            #next
+                            continue
+                        #end if
+
+                        if "ｂ×Ｄ"in line:   # ｂ×Ｄ
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                断面サイズ.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if "上端"in line and ucount==0:
+                            ucount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                主筋上端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if "下端"in line and scount==0:
+                            scount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                主筋下端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+                            
+                        if "上端"in line and ucount==1:
+                            ucount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                材料上端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if "下端"in line and scount==1:
+                            scount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                材料下端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+                        
+                        if "上端"in line and ucount==2:
+                            ucount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                かぶり上端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if "下端"in line and scount==2:
+                            scount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                かぶり下端.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if ucount==3 and scount==3:
+                            ucount += 1
+                            scount += 1
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                あばら筋.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+
+                        if "材料"in line and ucount==4 and scount==4:
+                            n1 = len(itemCenter)
+                            n2 = len(items)
+                            if n2 > n1*2:
+                                items2 = []
+                                for j in range(0,n2-1,2):
+                                    items2.append(items[j]+items[j+1])
+                                #next
+                            else:
+                                items2 = items
+                            #end if
+                            n2 = len(items2)
+                            for j in range(n1):
+                                あばら筋材料.append(items2[n2-n1+j])
+                            #next
+                            continue
+                        #end if
+                        
+                    #end if
+                #next
+                if len(断面サイズ)>0:
+                    a=0
+                    j = 0
+                    for names in memberName:
+                        names2 = names.split(',')
+                        dic1 = {}
+                        # j += 1
+                        item = itemCenter[j][0]
+                        if item == "端部":
+                            kind = ["端部","中央"]
+                        elif item == "左端":
+                            kind = ["左端","中央","右端"]
+                        elif item == "全断面":
+                            kind = ["全断面"]
+                        #end if
+                        kn = len(kind)
+                        for k in range(kn):
+                            dic2 = {}
+                            dic2["断面サイズ"]= 断面サイズ[j+k]
+                            dic2["主筋上端"]= 主筋上端[j+k]
+                            dic2["主筋下端"]= 主筋下端[j+k]
+                            dic2["材料上端"]= 材料上端[j+k]
+                            dic2["材料下端"]= 材料下端[j+k]
+                            dic2["かぶり上端"]= かぶり上端[j+k]
+                            dic2["かぶり下端"]= かぶり下端[j+k]
+                            dic2["あばら筋"]= あばら筋[j+k]
+                            dic2["あばら筋材料"]= あばら筋材料[j+k]
+                            dic1[kind[k]] = dic2
+                        #next
+                        j += kn
+                        
+                        print(names2)
+                        for name in names2:
+                            if name in self.BeamMemberSpan.keys():
+                                dic0 = self.BeamMemberSpan[name]
+                                dic0["断面諸元"] = dic1
+                                dic0["断面種類"] = kind
+                                self.BeamMemberSpan[name] = dic0
+                            else:
+                                dic0 = {}
+                                dic0["断面諸元"] = dic1
+                                dic0["断面種類"] = kind
+                                self.BeamMemberSpan[name] = dic0
+                            #end if
+                        #next
+                    #next
+                #end if
+
+            #end if
 
         #=================================================================================================
         #   検定比図のチェック
