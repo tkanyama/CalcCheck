@@ -658,6 +658,8 @@ class CheckTool():
 #   床伏図から部材の符号と配置を検出する関数
 #==================================================================================
     def BeamMemberSearch(self,CharLinesH , CharDataH, CharLinesV , CharDataV):
+
+        dv = 20
         # X1の文字がある行を検索
         Xst = []
         i = -1
@@ -794,7 +796,7 @@ class CheckTool():
                             yposition = ""
                             for y in Y:
                                 j += 1
-                                if ym <= y + 7 and ym>=y-7:
+                                if ym <= y + dv and ym>=y-dv:
                                     yposition = Yname[j]
                                     break
                                 #end if
@@ -805,14 +807,14 @@ class CheckTool():
                                 dic1 = {}
                                 dic1["配置"] = d1
                                 self.BeamMemberSpan[item] = dic1
-                                continue
+                                break
                             else:
                                 dic1 = self.BeamMemberSpan[item]
                                 d2= d1["配置"]
                                 d2.append([str(Xlength1),FloorName, xposition,yposition])
                                 dic1["配置"] = d2
                                 self.BeamMemberSpan[item] = dic1
-                                continue
+                                break
                             #end if
                         else:
                             # CharData = CharDataH[i]            
@@ -828,9 +830,9 @@ class CheckTool():
                                     yposition = ""
                                     for y in Y:
                                         jj += 1
-                                        if ym <= y + 5 and ym>=y-5:
+                                        if ym <= y + dv and ym>=y-dv:
                                             yposition = Yname[jj]
-                                            continue
+                                            break
                                         #end if
                                     #next
                                     if not item2 in self.BeamMemberSpan:
@@ -840,11 +842,11 @@ class CheckTool():
                                         self.BeamMemberSpan[item2] = dic1
                                         # self.BeamMemberSpan[item2] = d1
                                         # self.memberSpan[item2] = str(Xlength2[j])
-                                        continue
+                                        break
                                     else:
                                         dic1 = self.BeamMemberSpan[item2]
                                         d2 = dic1["配置"]
-                                        d2.append([str(Xlength1),FloorName, xposition,yposition])
+                                        d2.append([str(xlen),FloorName, xposition,yposition])
                                         dic1["配置"] = d2
                                         self.BeamMemberSpan[item2] = dic1
                                 
@@ -853,7 +855,7 @@ class CheckTool():
                                         # d2.append([str(xlen),FloorName,xposition,yposition])
                                         # # d3 = [d1[0],d2]
                                         # self.BeamMemberSpan[item2] = d2
-                                        continue
+                                        break
                                 #end if
                             #next
                         #end if
@@ -881,8 +883,11 @@ class CheckTool():
                 # print(line)
                 items = line.split()
                 line2 = line.replace(" ","")
-                # st = 0
+                st = 0
+                # print(items)
                 for item in items:
+                    # if item == '2G4A':
+                    #     a=0
                     CharData = CharDataV[i]            
                     n = line2.find(item, st)
                     x0 = CharData[n][1]
@@ -899,13 +904,13 @@ class CheckTool():
                             yposition = Yname[0]+"-"+Yname[len(Yname)-1]
                             xposition = ""
                             for j in range(len(X)):
-                                if xm <= X[j] + 20 and xm >= X[j] -20:
+                                if xm <= X[j] + dv and xm >= X[j] -dv:
                                     xposition = Xname[j]
                                     break
                                 #end if
                             #next
                             for j in range(len(X)-1):    
-                                if xm <= (X[j]+X[j+1])/2.0 + 20 and xm >= (X[j]+X[j+1])/2.0 - 20:
+                                if xm <= (X[j]+X[j+1])/2.0 + dv and xm >= (X[j]+X[j+1])/2.0 - dv:
                                     xposition = Xname[j]+"-"+Xname[j+1]
                                     break
                                 #end if
@@ -920,7 +925,7 @@ class CheckTool():
                             else:
                                 dic1 = self.BeamMemberSpan[item]
                                 d2= dic1["配置"]
-                                d2.append([str(Xlength1),FloorName, xposition,yposition])
+                                d2.append([str(Ylength1),FloorName, xposition,yposition])
                                 dic1["配置"] = d2
                                 self.BeamMemberSpan[item] = dic1
                                 # d1 = self.BeamMemberSpan[item]
@@ -938,36 +943,35 @@ class CheckTool():
                                     yposition = Yname[j]+"-"+Yname[j+1]
                                     xposition = ""
                                     for jj in range(len(X)-1):
-                                        if xm <= X[jj] + 7 and xm >= X[jj] -7:
+                                        if xm <= X[jj] + dv and xm >= X[jj] -dv:
                                             xposition = Xname[jj]
                                             continue
-                                        elif xm <=(X[jj]+X[jj+1])/2.0 + 7 and xm >=(X[jj]+X[jj+1])/2.0 - 7:
+                                        elif xm <=(X[jj]+X[jj+1])/2.0 + dv and xm >=(X[jj]+X[jj+1])/2.0 - dv:
                                             xposition = Xname[jj]+"-"+Xname[jj+1]
                                             continue
                                         #end if
                                     #next
 
-                                    if not item in self.BeamMemberSpan:
-                                        d1 = [[str(ylen),FloorName, xposition,yposition]]
-                                        dic1 = {}
-                                        dic1["配置"] = d1
-                                        self.BeamMemberSpan[item] = dic1
-                                        # d1 = [[str(ylen),FloorName, xposition,yposition]]
-                                        # self.BeamMemberSpan[item] = d1
-                                        break
-                                    else:
-                                        dic1 = self.BeamMemberSpan[item]
-                                        d2= dic1["配置"]
-                                        d2.append([str(ylen),FloorName, xposition,yposition])
-                                        dic1["配置"] = d2
-                                        self.BeamMemberSpan[item] = dic1
-                                        # d1 = self.BeamMemberSpan[item]
-                                        # d2= d1
-                                        # d2.append([str(ylen),FloorName, xposition,yposition])
-                                        # # d3 = [d1[0],d2]
-                                        # self.BeamMemberSpan[item] = d2
-                                        break
-                                    #end if
+                                if not item in self.BeamMemberSpan:
+                                    d1 = [[str(ylen),FloorName, xposition,yposition]]
+                                    dic1 = {}
+                                    dic1["配置"] = d1
+                                    self.BeamMemberSpan[item] = dic1
+                                    # d1 = [[str(ylen),FloorName, xposition,yposition]]
+                                    # self.BeamMemberSpan[item] = d1
+                                    break
+                                else:
+                                    dic1 = self.BeamMemberSpan[item]
+                                    d2= dic1["配置"]
+                                    d2.append([str(ylen),FloorName, xposition,yposition])
+                                    dic1["配置"] = d2
+                                    self.BeamMemberSpan[item] = dic1
+                                    # d1 = self.BeamMemberSpan[item]
+                                    # d2= d1
+                                    # d2.append([str(ylen),FloorName, xposition,yposition])
+                                    # # d3 = [d1[0],d2]
+                                    # self.BeamMemberSpan[item] = d2
+                                    break
                                 #end if
                             #next
                         #end if
@@ -1763,7 +1767,11 @@ class CheckTool():
         #=================================================================================================
                             
         elif mode == "梁の検定表" : 
-
+            keys = list(self.BeamMemberSpan.keys())
+            for key in keys:
+                dic1 = self.BeamMemberSpan[key]
+                print(key,dic1)
+                
             CharLines , CharData = self.MakeChar(page, interpreter2,device2)
             if B_kind == "RC造" or B_kind == "SRC造" or B_kind == "":
                 # =======================================================
