@@ -1276,6 +1276,61 @@ class CheckTool():
         if mode == "断面リスト" :
             dx = 3.0
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
+            
+            # 縦線と横線を分ける。
+            if len(LineDatas) > 0 :
+                LineH = []            
+                LineV = []
+                for Line in LineDatas:
+                    if Line["angle"] == "H":
+                        LineH.append(Line)
+                    elif Line["angle"] == "V":                    
+                        LineV.append(Line)                        
+                    #end if
+                #next
+            #end if
+
+            # 同じライン上の縦線（太線）を合体させる。
+            if len(LineV)>0:
+                l1 = []
+                for line in LineV:
+                    l1.append(line["x0"])
+                #next
+                index=np.argsort(np.array(l1)) # [::-1]
+                LineV2 = []
+                for i in index:
+                    LineV2.append(LineV[i])
+                #next i
+                y0 = LineV2[0]["y0"]
+                y1 = LineV2[0]["y1"]
+                x0 = LineV2[0]["x0"]
+                x1 = LineV2[0]["x1"]
+                LineV3 = []
+                for i in range(len(LineV)):
+                    if LineV[i]["x0"]==x0:
+                        if LineV[i]["y0"]<y0:
+                            y0 = LineV[i]["y0"]
+                        #end if
+                        if LineV[i]["y1"]>y1:
+                            y1 = LineV[i]["y1"]
+                        #end if
+                    else:
+                        LineV3.append([x0,x1,y0,y1])
+                        # LineV3.append(x0)
+                        y0 = LineV[i]["y0"]
+                        y1 = LineV[i]["y1"]
+                        x0 = LineV[i]["x0"]
+                        x1 = LineV[i]["x1"]
+                    #end if
+                #next
+                LineV3.append([x0,x1,y0,y1])
+                # LineV3.append(x0)
+            #end if
+
+
+
+
+
 
             # 縦線と横線をそれぞれ太線と細線に分ける。
             if len(LineDatas) > 0 :
@@ -1325,14 +1380,16 @@ class CheckTool():
                             y1 = LineV[i]["y1"]
                         #end if
                     else:
-                        LineVBold2.append([x0,x1,y0,y1])
+                        # LineVBold2.append([x0,x1,y0,y1])
+                        LineVBold2.append(x0)
                         y0 = LineV[i]["y0"]
                         y1 = LineV[i]["y1"]
                         x0 = LineV[i]["x0"]
                         x1 = LineV[i]["x1"]
                     #end if
                 #next
-                LineVBold2.append([x0,x1,y0,y1])
+                # LineVBold2.append([x0,x1,y0,y1])
+                LineVBold2.append(x0)
             #end if
 
             # 同じライン上の横線（太線）を合体させる。     
@@ -1360,14 +1417,16 @@ class CheckTool():
                             x1 = LineH[i]["x1"]
                         #end if
                     else:
-                        LineHBold2.append([x0,x1,y0,y1])
+                        # LineHBold2.append([x0,x1,y0,y1])
+                        LineHBold2.append(y0)
                         y0 = LineH[i]["y0"]
                         y1 = LineH[i]["y1"]
                         x0 = LineH[i]["x0"]
                         x1 = LineH[i]["x1"]
                     #end if
                 #next
-                LineHBold2.append([x0,x1,y0,y1])
+                # LineHBold2.append([x0,x1,y0,y1])
+                LineHBold2.append(y0)
             #end if
 
             # 同じライン上の縦線（細線）を合体させる。
@@ -1395,14 +1454,16 @@ class CheckTool():
                             y1 = LineV[i]["y1"]
                         #end if
                     else:
-                        LineVThin2.append([x0,x1,y0,y1])
+                        # LineVThin2.append([x0,x1,y0,y1])
+                        LineVThin2.append(x0)
                         y0 = LineV[i]["y0"]
                         y1 = LineV[i]["y1"]
                         x0 = LineV[i]["x0"]
                         x1 = LineV[i]["x1"]
                     #end if
                 #next
-                LineVThin2.append([x0,x1,y0,y1])
+                # LineVThin2.append([x0,x1,y0,y1])
+                LineVThin2.append(x0)
             #end if
 
             # 同じライン上の横線（細線）を合体させる。     
@@ -1431,6 +1492,7 @@ class CheckTool():
                         #end if
                     else:
                         LineHThin2.append([x0,x1,y0,y1])
+                        # LineHThin2.append(y0)
                         y0 = LineH[i]["y0"]
                         y1 = LineH[i]["y1"]
                         x0 = LineH[i]["x0"]
@@ -1438,8 +1500,19 @@ class CheckTool():
                     #end if
                 #next
                 LineHThin2.append([x0,x1,y0,y1])
+                # LineHThin2.append(y0)
             #end if
 
+            lx0=LineVThin2[0]
+            lx1=LineVBold2[0]
+            ly0=LineHBold2[1]
+            ly1=LineHBold2[2]
+            ltinV = []
+            for line in LineVThin:
+                if line["x0"]>lx0 and line["x0"]>lx1 and line["y0"]>=ly0 and line["y1"]>ly1:
+                    ltinV.append(line)
+                #end if
+            #next
 
             if len(CharLines) > 0 :
                 LineWordDatas = []
@@ -1604,12 +1677,14 @@ class CheckTool():
             
             a=0
                     
-            # mn = len(stline)
-            # if mn>0 :
-            #     for i in range(mn):
-            #         xmax = 100000.0
-            #         for j in range(stline(i),edline(i)):
-            #             if LineWordDatas[j][2]<xmax:
+            mn = len(stline)
+            if mn>0 :
+                for i in range(mn):
+                    xmax = 100000.0
+                    for j in range(stline(i),edline(i)):
+                        LineWordData = LineWordDatas[j]
+                        if LineWordData[2]<xmax:
+                            xmax = LineWordData[2]
 
 
 
@@ -1999,19 +2074,31 @@ class CheckTool():
         
         if mode == "検定比図" :
 
-            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
-                for CarDataOfline in CharLines:
+                for line in CharLines:
                     i += 1
-                    t3 = CarDataOfline[0]
+                    t3 = line[0]
                     CharLine = CharData[i] # １行文のデータを読み込む
                     
-                    # if "検定比" in t3 : # 「検定比」が現れた場合の処理
-                    # print(t3)
+                    # line = CharLines[i][0]
+                    line2 = ""
+                    xx= CharData[i][0][2]
+                    for Char in CharData[i]:
+                        if Char[1]>xx+3:
+                            line2 += " "
+                        line2 += Char[0]
+                        xx = Char[2]
+                    #next
+                    items = line2.split()
+                    # print(line)
+                    # print(items)
                     st = 0
-                    t4 = t3.split()            # 文字列を空白で分割
+                    # t4 = t3.split()            # 文字列を空白で分割
+                    t4 = items
+
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
                             t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
@@ -2056,12 +2143,12 @@ class CheckTool():
                             #end if
 
                             # 数値を検索を開始するを文字数分移動
-                            st = nn + ln + 1
+                            st = nn + ln 
                         #next
                     #end if
                 #next
             #end if
-                
+            
         #=================================================================================================
         #   柱の検定表のチェック
         #=================================================================================================
