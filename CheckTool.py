@@ -579,25 +579,10 @@ class CheckTool():
                     items = line2.split()
                     # print(line)
                     # print(items)
-                    a=0
-
-                    # if "検定比" in t3 : # 「検定比」が現れた場合の処理
-                    # print(t3)
                     st = 0
                     # t4 = t3.split()            # 文字列を空白で分割
                     t4 = items
 
-
-
-
-
-
-
-
-                    # if "検定比" in t3 : # 「検定比」が現れた場合の処理
-                    # print(t3)
-                    # st = 0
-                    # t4 = t3.split()            # 文字列を空白で分割
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
                             t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
