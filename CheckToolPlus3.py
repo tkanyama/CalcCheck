@@ -18,7 +18,7 @@ from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.pdfpage import PDFPage
 # from pdfminer.layout import LAParams, LTTextContainer
-from pdfminer.layout import LAParams, LTTextContainer, LTContainer, LTTextBox, LTTextLine, LTChar
+from pdfminer.layout import LAParams, LTTextContainer, LTContainer, LTTextBox, LTTextLine, LTChar,LTLine,LTRect
 
 # pip install pdfrw
 from pdfrw import PdfReader
@@ -292,6 +292,29 @@ class CheckTool():
             #end if
         #next
 
+
+        LineData = []
+        for lt in layout:
+            if isinstance(lt, LTLine):  # レイアウトデータうち、LTLineのみを取得
+                lineDic = {}
+                lineDic["x0"] = lt.x0
+                lineDic["x1"] = lt.x1
+                lineDic["y0"] = lt.y0
+                lineDic["y1"] = lt.y1
+                lineDic["height"] = lt.height
+                lineDic["width"] = lt.width
+                lineDic["linewidth"] = lt.linewidth
+                lineDic["pts"] = lt.pts
+                if lt.x0 == lt.x1 :
+                    lineAngle = "V"
+                else:
+                    lineAngle = "H"
+                #end if
+                lineDic["angle"] = lineAngle
+                LineData.append(lineDic)
+            #end if
+        #next
+
         # その際、CharData2をY座標の高さ順に並び替えるためのリスト「CY」を作成
         CharData2=[]
         CY = []
@@ -423,7 +446,7 @@ class CheckTool():
             t1.append([tt2])
         #end if
 
-        return t1 , CharData5
+        return t1 , CharData5, LineData
     #end def
     #*********************************************************************************
 
@@ -445,6 +468,28 @@ class CheckTool():
                 if m1[1] == 0.0 :  # 回転していない文字のみを抽出
                     CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
                 #end if
+            #end if
+        #next
+
+        LineData = []
+        for lt in layout:
+            if isinstance(lt, LTLine):  # レイアウトデータうち、LTLineのみを取得
+                lineDic = {}
+                lineDic["x0"] = lt.x0
+                lineDic["x1"] = lt.x1
+                lineDic["y0"] = lt.y0
+                lineDic["y1"] = lt.y1
+                lineDic["height"] = lt.height
+                lineDic["width"] = lt.width
+                lineDic["linewidth"] = lt.linewidth
+                lineDic["pts"] = lt.pts
+                if lt.x0 == lt.x1 :
+                    lineAngle = "V"
+                else:
+                    lineAngle = "H"
+                #end if
+                lineDic["angle"] = lineAngle
+                LineData.append(lineDic)
             #end if
         #next
 
@@ -650,7 +695,7 @@ class CheckTool():
         #end if
 
 
-        return t1H , CharDataH, t1V , CharDataV
+        return t1H , CharDataH, t1V , CharDataV, LineData
     #end def
     #*********************************************************************************
 
@@ -1214,7 +1259,7 @@ class CheckTool():
         #=================================================================================================
         
         if mode == "床伏図" :
-            CharLinesH , CharDataH, CharLinesV , CharDataV = self.MakeCharPlus(page, interpreter2,device2)
+            CharLinesH , CharDataH, CharLinesV , CharDataV ,LineDatas = self.MakeCharPlus(page, interpreter2,device2)
             self.BeamMemberSearch(CharLinesH , CharDataH, CharLinesV , CharDataV)
             keys = list(self.BeamMemberSpan.keys())
             for key in keys:
@@ -1229,385 +1274,724 @@ class CheckTool():
         #=================================================================================================
         
         if mode == "断面リスト" :
+            dx = 3.0
+            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
-
-            if len(CharLines) > 0:
-                ucount = 0
-                scount = 0
-                コンクリート = []
-                主筋上端 = []
-                主筋下端 = []
-                材料上端 = []
-                材料下端 = []
-                かぶり上端 = []
-                かぶり下端 = []
-                あばら筋 = []
-                あばら筋材料 = []
-                memberName = []
-                itemsx = []
-                nameCenter = []
-                        
-
-                for i in range(len(CharLines)):
-                    
-                    line = CharLines[i][0]
-                    line2 = ""
-                    xx= CharData[i][0][2]
-                    for Char in CharData[i]:
-                        if Char[1]>xx+7:
-                            line2 += " "
-                        line2 += Char[0]
-                        xx = Char[2]
-                    #next
-                    items = line2.split()
-                    print(line)
-                    print(items)
-                    if len(items)>0:
-                        st = 0
-                        for item in items:
-                            n = line.find(item,st)
-                            x1 = CharData[i][n][1]
-                            x2 = CharData[i][n+len(item)-1][2]
-                            xm = (x1+x2)/2.0
-                            itemsx.append(xm)
-                            st = n + len(item)
-                            if re.match("G\d+\w*",item):   # G1,G11,G2等がある場合はその中央のX座標を取得
-                                nameCenter.append([item,xm])
-                            #end if
-
-                            # 小梁B70は無視
-                            # if re.match("B\d+",item): 
-                            #     Bflag = True
-                            # else:
-                            #     Bflag = False
-                            # #end if
-                        #next
-                        if len(nameCenter)>0:
-                            memberN = len(nameCenter)   # 部材の数量
+            # 縦線と横線をそれぞれ太線と細線に分ける。
+            if len(LineDatas) > 0 :
+                LineHBold = []
+                LineHThin = []                
+                LineVBold = []
+                LineVThin = []
+                for Line in LineDatas:
+                    if Line["angle"] == "H":
+                        if Line["linewidth"]>0.9:
+                            LineHBold.append(Line)
+                        else:
+                            LineHThin.append(Line)
                         #end if
-
-                        if "中央" in line  or "全断面" in line:
-                            itemCenter = []
-                            j = -1
-                            for item in items:
-                                j += 1
-                                if item == "端部" or item == "中央" or item == "左端" or item == "右端" or item == "全断面" :
-                                    itemCenter.append([item, itemsx[j]])
-                                #end if
-                            #next
-                            continue
+                    elif Line["angle"] == "V":
+                        if Line["linewidth"]>0.9:
+                            LineVBold.append(Line)
+                        else:
+                            LineVThin.append(Line)
                         #end if
-
-                        if "符号名"in line :
-                            # if "1G12A" in line:
-                            #     a=0
-                            if len(コンクリート)>0:
-                                a=0
-                                j = 0
-                                for names in memberName:
-                                    names2 = names.split(',')
-                                    dic1 = {}
-                                    # j += 1
-                                    print(j,names2)
-                                    print(itemCenter)
-                                    item = itemCenter[j][0]
-                                    if item == "端部":
-                                        kind = ["端部","中央"]
-                                    elif item == "左端":
-                                        kind = ["左端","中央","右端"]
-                                    elif item == "全断面":
-                                        kind = ["全断面"]
-                                    #end if
-                                    kn = len(kind)
-                                    for k in range(kn):
-                                        dic2 = {}
-                                        dic2["コンクリート"]= コンクリート[j+k]
-                                        dic2["主筋上端"]= 主筋上端[j+k]
-                                        dic2["主筋下端"]= 主筋下端[j+k]
-                                        dic2["材料上端"]= 材料上端[j+k]
-                                        dic2["材料下端"]= 材料下端[j+k]
-                                        dic2["かぶり上端"]= かぶり上端[j+k]
-                                        dic2["かぶり下端"]= かぶり下端[j+k]
-                                        dic2["あばら筋"]= あばら筋[j+k]
-                                        dic2["あばら筋材料"]= あばら筋材料[j+k]
-                                        dic1[kind[k]] = dic2
-                                    #next
-                                    j += kn
-                                    
-                                    print(names2)
-                                    for name in names2:
-                                        if name in self.BeamMemberSpan.keys():
-                                            dic0 = self.BeamMemberSpan[name]
-                                            dic0["断面諸元"] = dic1
-                                            dic0["断面種類"] = kind
-                                            self.BeamMemberSpan[name] = dic0
-                                        else:
-                                            dic0 = {}
-                                            dic0["断面諸元"] = dic1
-                                            dic0["断面種類"] = kind
-                                            self.BeamMemberSpan[name] = dic0
-                                        #end if
-                                    #next
-                                #next
-                            #end if
-
-                            ucount = 0
-                            scount = 0
-                            コンクリート = []
-                            主筋上端 = []
-                            主筋下端 = []
-                            材料上端 = []
-                            材料下端 = []
-                            かぶり上端 = []
-                            かぶり下端 = []
-                            あばら筋 = []
-                            あばら筋材料 = []
-                            memberName = []
-                            for item in items:
-                                item2 = item.split()
-                                flag = True
-                                for item3 in item2:
-                                    if re.match("FG\d+\w*",item3) or re.match("RG\d+\w*",item3) or re.match("\d+G\d+\w*",item3):   # 梁の符号パターンに合う場合は配列に記録
-                                        flag = flag and True
-                                    else:
-                                        flag = flag and False
-                                    #end if
-                                #next
-                                if flag :
-                                    memberName.append(item)
-                                #end if
-                            #next
-                            continue
-                        #end if
-
-                        if "ｂ×Ｄ"in line:   # ｂ×Ｄ
-                        # if "ｺﾝｸﾘｰﾄ" in line:   # ｂ×Ｄ
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            if n2 >= 2*n1:
-                                for j in range(n1):
-                                    # コンクリート.append(items2[n2-n1+j])
-                                    コンクリート.append(items[n2-n1*2+j*2]+" "+ items[n2-n1*2+j*2+1])
-                                #next
-                            continue
-                        #end if
-
-                        if "上端"in line and ucount==0:
-                            ucount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                主筋上端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-
-                        if "下端"in line and scount==0:
-                            scount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                主筋下端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-                            
-                        if "上端"in line and ucount==1:
-                            ucount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                材料上端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-
-                        if "下端"in line and scount==1:
-                            scount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                材料下端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-                        
-                        if "上端"in line and ucount==2:
-                            ucount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                かぶり上端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-
-                        if "下端"in line and scount==2:
-                            scount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                かぶり下端.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-
-                        if ucount==3 and scount==3:
-                            ucount += 1
-                            scount += 1
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                あばら筋.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-
-                        if "材料"in line and ucount==4 and scount==4:
-                            n1 = len(itemCenter)
-                            n2 = len(items)
-                            # if n2 > n1*2:
-                            #     items2 = []
-                            #     for j in range(0,n2-1,2):
-                            #         items2.append(items[j]+items[j+1])
-                            #     #next
-                            # else:
-                            #     items2 = items
-                            # #end if
-                            # n2 = len(items2)
-                            for j in range(n1):
-                                あばら筋材料.append(items[n2-n1+j])
-                            #next
-                            continue
-                        #end if
-                        
                     #end if
                 #next
-                if len(コンクリート)>0:
-                    a=0
-                    j = 0
-                    for names in memberName:
-                        names2 = names.split(',')
-                        dic1 = {}
-                        # j += 1
-                        item = itemCenter[j][0]
-                        if item == "端部":
-                            kind = ["端部","中央"]
-                        elif item == "左端":
-                            kind = ["左端","中央","右端"]
-                        elif item == "全断面":
-                            kind = ["全断面"]
-                        #end if
-                        kn = len(kind)
-                        for k in range(kn):
-                            dic2 = {}
-                            dic2["コンクリート"]= コンクリート[j+k]
-                            dic2["主筋上端"]= 主筋上端[j+k]
-                            dic2["主筋下端"]= 主筋下端[j+k]
-                            dic2["材料上端"]= 材料上端[j+k]
-                            dic2["材料下端"]= 材料下端[j+k]
-                            dic2["かぶり上端"]= かぶり上端[j+k]
-                            dic2["かぶり下端"]= かぶり下端[j+k]
-                            dic2["あばら筋"]= あばら筋[j+k]
-                            dic2["あばら筋材料"]= あばら筋材料[j+k]
-                            dic1[kind[k]] = dic2
-                        #next
-                        j += kn
-                        
-                        print(names2)
-                        for name in names2:
-                            if name in self.BeamMemberSpan.keys():
-                                dic0 = self.BeamMemberSpan[name]
-                                dic0["断面諸元"] = dic1
-                                dic0["断面種類"] = kind
-                                self.BeamMemberSpan[name] = dic0
-                            else:
-                                dic0 = {}
-                                dic0["断面諸元"] = dic1
-                                dic0["断面種類"] = kind
-                                self.BeamMemberSpan[name] = dic0
-                            #end if
-                        #next
-                    #next
-                #end if
-                # ucount = 0
-                # scount = 0
-                # コンクリート = []
-                # 主筋上端 = []
-                # 主筋下端 = []
-                # 材料上端 = []
-                # 材料下端 = []
-                # かぶり上端 = []
-                # かぶり下端 = []
-                # あばら筋 = []
-                # あばら筋材料 = []
-                # memberName = []
-
             #end if
+
+            # 同じライン上の縦線（太線）を合体させる。
+            if len(LineVBold)>0:
+                l1 = []
+                for line in LineVBold:
+                    l1.append(line["x0"])
+                #next
+                index=np.argsort(np.array(l1)) # [::-1]
+                LineV = []
+                for i in index:
+                    LineV.append(LineVBold[i])
+                #next i
+                y0 = LineV[0]["y0"]
+                y1 = LineV[0]["y1"]
+                x0 = LineV[0]["x0"]
+                x1 = LineV[0]["x1"]
+                LineVBold2 = []
+                for i in range(len(LineV)):
+                    if LineV[i]["x0"]==x0:
+                        if LineV[i]["y0"]<y0:
+                            y0 = LineV[i]["y0"]
+                        #end if
+                        if LineV[i]["y1"]>y1:
+                            y1 = LineV[i]["y1"]
+                        #end if
+                    else:
+                        LineVBold2.append([x0,x1,y0,y1])
+                        y0 = LineV[i]["y0"]
+                        y1 = LineV[i]["y1"]
+                        x0 = LineV[i]["x0"]
+                        x1 = LineV[i]["x1"]
+                    #end if
+                #next
+                LineVBold2.append([x0,x1,y0,y1])
+            #end if
+
+            # 同じライン上の横線（太線）を合体させる。     
+            if len(LineHBold)>0:
+                l1 = []
+                for line in LineHBold:
+                    l1.append(line["y0"])
+                #next
+                index=np.argsort(np.array(l1))[::-1]
+                LineH = []
+                for i in index:
+                    LineH.append(LineHBold[i])
+                #next i
+                y0 = LineH[0]["y0"]
+                y1 = LineH[0]["y1"]
+                x0 = LineH[0]["x0"]
+                x1 = LineH[0]["x1"]
+                LineHBold2 = []
+                for i in range(len(LineH)):
+                    if LineH[i]["y0"]==y0:
+                        if LineV[i]["x0"]<x0:
+                            x0 = LineH[i]["x0"]
+                        #end if
+                        if LineH[i]["x1"]>x1:
+                            x1 = LineH[i]["x1"]
+                        #end if
+                    else:
+                        LineHBold2.append([x0,x1,y0,y1])
+                        y0 = LineH[i]["y0"]
+                        y1 = LineH[i]["y1"]
+                        x0 = LineH[i]["x0"]
+                        x1 = LineH[i]["x1"]
+                    #end if
+                #next
+                LineHBold2.append([x0,x1,y0,y1])
+            #end if
+
+            # 同じライン上の縦線（細線）を合体させる。
+            if len(LineVThin)>0:
+                l1 = []
+                for line in LineVThin:
+                    l1.append(line["x0"])
+                #next
+                index=np.argsort(np.array(l1))  # [::-1]
+                LineV = []
+                for i in index:
+                    LineV.append(LineVThin[i])
+                #next i
+                y0 = LineV[0]["y0"]
+                y1 = LineV[0]["y1"]
+                x0 = LineV[0]["x0"]
+                x1 = LineV[0]["x1"]
+                LineVThin2 = []
+                for i in range(len(LineV)):
+                    if LineV[i]["x0"]==x0:
+                        if LineV[i]["y0"]<y0:
+                            y0 = LineV[i]["y0"]
+                        #end if
+                        if LineV[i]["y1"]>y1:
+                            y1 = LineV[i]["y1"]
+                        #end if
+                    else:
+                        LineVThin2.append([x0,x1,y0,y1])
+                        y0 = LineV[i]["y0"]
+                        y1 = LineV[i]["y1"]
+                        x0 = LineV[i]["x0"]
+                        x1 = LineV[i]["x1"]
+                    #end if
+                #next
+                LineVThin2.append([x0,x1,y0,y1])
+            #end if
+
+            # 同じライン上の横線（細線）を合体させる。     
+            if len(LineHThin)>0:
+                l1 = []
+                for line in LineHThin:
+                    l1.append(line["y0"])
+                #next
+                index=np.argsort(np.array(l1))[::-1]
+                LineH = []
+                for i in index:
+                    LineH.append(LineHThin[i])
+                #next i
+                y0 = LineH[0]["y0"]
+                y1 = LineH[0]["y1"]
+                x0 = LineH[0]["x0"]
+                x1 = LineH[0]["x1"]
+                LineHThin2 = []
+                for i in range(len(LineH)):
+                    if LineH[i]["y0"]==y0:
+                        if LineH[i]["x0"]<x0:
+                            x0 = LineH[i]["x0"]
+                        #end if
+                        if LineH[i]["x1"]>x1:
+                            x1 = LineH[i]["x1"]
+                        #end if
+                    else:
+                        LineHThin2.append([x0,x1,y0,y1])
+                        y0 = LineH[i]["y0"]
+                        y1 = LineH[i]["y1"]
+                        x0 = LineH[i]["x0"]
+                        x1 = LineH[i]["x1"]
+                    #end if
+                #next
+                LineHThin2.append([x0,x1,y0,y1])
+            #end if
+
+
+            if len(CharLines) > 0 :
+                LineWordDatas = []
+                wordlines = []
+                for i in range(len(CharData)):
+                    CarDataOfline = CharData[i]     # 文字＆位置情報配列を1行分取得
+                    line2 = ""                      # 1行分の文字列
+                    xx1 = CarDataOfline[0][2]       # その行の最初の文字のX1座標
+                    xx0 = CarDataOfline[0][1]       # その行の最初の文字のX0座標
+                    CharToWord =[]                  # 単語に含まれる文字＆位置情報の配列
+                    WordDicMat = []                 # その行の単語情報辞書の配列
+                    wordline = ""                   # その行の単語をスペースを挟んで連結した文字列
+                    word = ""                       # 単語
+
+                    # 文字＆位置情報配列から単語&位置情報配列を作成する。
+                    for Char in CarDataOfline:      # 文字＆位置情報配列から1文字分のデータを取得
+                        if Char[0] != " " and Char[0] != "":    # 空白以外の文字の場合の処理
+                            x0= Char[1]
+                            x1= Char[2]
+                            y0= Char[3]
+                            y1= Char[4]
+                            if x0 > xx1 + dx:       # 文字の座標がdx以上離れていると異なる単語と判断
+                                if word != "":
+                                    mx = (xx0+xx1)/2.0          # 単語の中心点のX座標を計算
+                                    my = (y0+y1)/2.0            # 単語の中心点のY座標を計算
+                                    dic1 = {}                   # 単語を登録する辞書を作成 
+                                    dic1["word"]=word           # 単語
+                                    dic1["wordData"]=CharToWord # 単語&m位置情報
+                                    dic1["x0"]=xx0              # 単語の左端のX座標
+                                    dic1["x1"]=xx1              # 単語の右端のX座標
+                                    dic1["y0"]=y0               # 単語の下端のY座標
+                                    dic1["y1"]=y1               # 単語の上端のY座標
+                                    dic1["mx"]=mx               # 単語の中心点のX座標
+                                    dic1["my"]=my               # 単語の中心点のY座標
+                                    # wordDatas.append([word,wordData,xx0,xx1,y0,y1,mx,my])
+                                    WordDicMat.append(dic1)     # 単語情報辞書の配列に辞書を追加
+                                    wordline += word + " "      # 単語を連結
+                                    xx0 = Char[1]               # 次の単語の左端
+                                #end if
+
+                                line2 += " "
+                                xx1 = x1
+                                CharToWord = []
+                                # wordline = ""
+                                word = ""
+                            #end if
+                            CharToWord.append(Char)
+                            line2 += Char[0]
+                            word += Char[0]
+                            xx1 = Char[2]
+                            # else:
+                            #     CharToWord.append(Char)
+                            #     line2 += Char[0]
+                            #     word += Char[0]
+                            #     xx1 = Char[2]
+                            # #end if
+                        else:       # 空白の場合は単語の境界と判断し、単語登録処理を行う。
+                            if len(CharToWord)>0:
+                                if word != "":
+                                    mx = (xx0+xx1)/2.0
+                                    my = (y0+y1)/2.0
+                                    dic1 = {}
+                                    dic1["word"]=word
+                                    dic1["wordData"]=CharToWord
+                                    dic1["x0"]=xx0
+                                    dic1["x1"]=xx1
+                                    dic1["y0"]=y0
+                                    dic1["y1"]=y1
+                                    dic1["mx"]=mx
+                                    dic1["my"]=my
+                                    # wordDatas.append([word,wordData,xx0,xx1,y0,y1,mx,my])
+                                    WordDicMat.append(dic1)
+                                    wordline += word + " "
+                                    xx0 = Char[1]
+                                line2 += " "
+                                xx1 = x1
+                                CharToWord = []
+                                # wordline = ""
+                                word = ""
+                            #end if
+                        #end if
+                        
+                    #next
+                    if len(CharToWord)>0:   # 未処理のデータがある場合も単語登録処理
+                        mx = (xx0+xx1)/2.0
+                        my = (y0+y1)/2.0
+                        dic1 = {}
+                        dic1["word"]=word
+                        dic1["wordData"]=CharToWord
+                        dic1["x0"]=xx0
+                        dic1["x1"]=xx1
+                        dic1["y0"]=y0
+                        dic1["y1"]=y1
+                        dic1["mx"]=mx
+                        dic1["my"]=my
+                        # wordDatas.append([word,wordData,xx0,xx1,y0,y1,mx,my])
+                        WordDicMat.append(dic1)
+                        wordline += word + " "
+                    #end if
+
+                    LineWordDatas.append(WordDicMat)    # 1行分の単語&位置情報配列を全体配列に登録
+                    wordlines.append(wordline)          # その行の単語をスペースを挟んで連結した文字列を全体配列に登録
+                #next
+            #end if
+            
+            # 断面サイズ表の開始・終了の行位置と断面位置単語の間隔距離を計算
+            stline = []     # 断面サイズ表の
+            edline = []
+            header = []
+            stflag = False
+            for i in range(len(LineWordDatas)):
+                WordDicMat = LineWordDatas[i]
+                words = []
+                for CharToWord in WordDicMat:
+                    words.append(CharToWord["word"])
+                #next
+                CarDataOfline = wordlines[i]
+                # if "端部" in line or "左端" in line or "全断面" in line:
+                if "端部" in words or "左端" in words or "全断面" in words:
+                    header=words
+                    headerCenter = []
+                    for CharToWord in WordDicMat:
+                        headerCenter.append(CharToWord["mx"])
+                    #next
+                    if len(header)>1:
+                        wordspan = headerCenter[1]-headerCenter[0]
+                    else:
+                        wordspan = (WordDicMat[0]["x1"]-WordDicMat[0]["x0"])*3.4
+                    stline.append(i)
+                    if stflag :
+                        edline.append(i-1)
+                    #end if
+                    stflag = True
+                #end if
+            #next
+            edline.append(len(LineWordDatas)-2)
+            a=0
+            SectionNumber = len(stline)
+            
+            patternDic = {}
+            patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+']
+            patternDic["断面寸法"]=['\d+.\d+','\d+×\d+']
+            patternDic["コンクリート"]=['\(Fc\d+\)']
+            patternDic["配筋"]=['\d+/\d+-D\d+','\d+-D\d+']
+            patternDic["材料"]=['SD\d+\w*']
+            patternDic["かぶり"]=['\d+\.\d+/\d+\.\d+','\d+/\d+\.\d+','\d+/\d+','\d{2}']
+            patternDic["あばら筋"]=['\d+-\w+\d+@\d+']
+            
+            print(re.match(patternDic["断面寸法"][0],"500×800"))
+            print(re.match(patternDic["断面寸法"][1],"500×800"))
+            print(re.match(patternDic["コンクリート"][0],"(Fc33)"))
+            print(re.match(patternDic["配筋"][0],"4/4-D32"))
+            print(re.match(patternDic["配筋"][1],"4-D32"))
+            print(re.match(patternDic["材料"][0],"SD390"))
+            print(re.match(patternDic["材料"][0],"SD390A"))
+            print(re.match(patternDic["あばら筋"][0],"3-D13@100"))
+            print(re.match(patternDic["あばら筋"][0],"3-TA13@100"))
+            print(re.match(patternDic["かぶり"][0],"50.5/43.5"))
+            print(re.match(patternDic["かぶり"][1],"50/43.5"))
+            print(re.match(patternDic["かぶり"][2],"50/43"))
+            print(re.match(patternDic["かぶり"][3],"50"))
+            
+            a=0
+                    
+            # mn = len(stline)
+            # if mn>0 :
+            #     for i in range(mn):
+            #         xmax = 100000.0
+            #         for j in range(stline(i),edline(i)):
+            #             if LineWordDatas[j][2]<xmax:
+
+
+
+
+                
+
+            # if len(CharLines) > 0:
+            #     ucount = 0
+            #     scount = 0
+            #     コンクリート = []
+            #     主筋上端 = []
+            #     主筋下端 = []
+            #     材料上端 = []
+            #     材料下端 = []
+            #     かぶり上端 = []
+            #     かぶり下端 = []
+            #     あばら筋 = []
+            #     あばら筋材料 = []
+            #     memberName = []
+            #     itemsx = []
+            #     nameCenter = []
+                        
+
+            #     for i in range(len(CharLines)):
+                    
+            #         line = CharLines[i][0]
+            #         line2 = ""
+            #         xx= CharData[i][0][2]
+            #         for Char in CharData[i]:
+            #             if Char[1]>xx+7:
+            #                 line2 += " "
+            #             line2 += Char[0]
+            #             xx = Char[2]
+            #         #next
+            #         items = line2.split()
+            #         print(line)
+            #         print(items)
+            #         if len(items)>0:
+            #             st = 0
+            #             for item in items:
+            #                 n = line.find(item,st)
+            #                 x1 = CharData[i][n][1]
+            #                 x2 = CharData[i][n+len(item)-1][2]
+            #                 xm = (x1+x2)/2.0
+            #                 itemsx.append(xm)
+            #                 st = n + len(item)
+            #                 if re.match("G\d+\w*",item):   # G1,G11,G2等がある場合はその中央のX座標を取得
+            #                     nameCenter.append([item,xm])
+            #                 #end if
+
+            #                 # 小梁B70は無視
+            #                 # if re.match("B\d+",item): 
+            #                 #     Bflag = True
+            #                 # else:
+            #                 #     Bflag = False
+            #                 # #end if
+            #             #next
+            #             if len(nameCenter)>0:
+            #                 memberN = len(nameCenter)   # 部材の数量
+            #             #end if
+
+            #             if "中央" in line  or "全断面" in line:
+            #                 itemCenter = []
+            #                 j = -1
+            #                 for item in items:
+            #                     j += 1
+            #                     if item == "端部" or item == "中央" or item == "左端" or item == "右端" or item == "全断面" :
+            #                         itemCenter.append([item, itemsx[j]])
+            #                     #end if
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "符号名"in line :
+            #                 # if "1G12A" in line:
+            #                 #     a=0
+            #                 if len(コンクリート)>0:
+            #                     a=0
+            #                     j = 0
+            #                     for names in memberName:
+            #                         names2 = names.split(',')
+            #                         dic1 = {}
+            #                         # j += 1
+            #                         print(j,names2)
+            #                         print(itemCenter)
+            #                         item = itemCenter[j][0]
+            #                         if item == "端部":
+            #                             kind = ["端部","中央"]
+            #                         elif item == "左端":
+            #                             kind = ["左端","中央","右端"]
+            #                         elif item == "全断面":
+            #                             kind = ["全断面"]
+            #                         #end if
+            #                         kn = len(kind)
+            #                         for k in range(kn):
+            #                             dic2 = {}
+            #                             dic2["コンクリート"]= コンクリート[j+k]
+            #                             dic2["主筋上端"]= 主筋上端[j+k]
+            #                             dic2["主筋下端"]= 主筋下端[j+k]
+            #                             dic2["材料上端"]= 材料上端[j+k]
+            #                             dic2["材料下端"]= 材料下端[j+k]
+            #                             dic2["かぶり上端"]= かぶり上端[j+k]
+            #                             dic2["かぶり下端"]= かぶり下端[j+k]
+            #                             dic2["あばら筋"]= あばら筋[j+k]
+            #                             dic2["あばら筋材料"]= あばら筋材料[j+k]
+            #                             dic1[kind[k]] = dic2
+            #                         #next
+            #                         j += kn
+                                    
+            #                         print(names2)
+            #                         for name in names2:
+            #                             if name in self.BeamMemberSpan.keys():
+            #                                 dic0 = self.BeamMemberSpan[name]
+            #                                 dic0["断面諸元"] = dic1
+            #                                 dic0["断面種類"] = kind
+            #                                 self.BeamMemberSpan[name] = dic0
+            #                             else:
+            #                                 dic0 = {}
+            #                                 dic0["断面諸元"] = dic1
+            #                                 dic0["断面種類"] = kind
+            #                                 self.BeamMemberSpan[name] = dic0
+            #                             #end if
+            #                         #next
+            #                     #next
+            #                 #end if
+
+            #                 ucount = 0
+            #                 scount = 0
+            #                 コンクリート = []
+            #                 主筋上端 = []
+            #                 主筋下端 = []
+            #                 材料上端 = []
+            #                 材料下端 = []
+            #                 かぶり上端 = []
+            #                 かぶり下端 = []
+            #                 あばら筋 = []
+            #                 あばら筋材料 = []
+            #                 memberName = []
+            #                 for item in items:
+            #                     item2 = item.split()
+            #                     flag = True
+            #                     for item3 in item2:
+            #                         if re.match("FG\d+\w*",item3) or re.match("RG\d+\w*",item3) or re.match("\d+G\d+\w*",item3):   # 梁の符号パターンに合う場合は配列に記録
+            #                             flag = flag and True
+            #                         else:
+            #                             flag = flag and False
+            #                         #end if
+            #                     #next
+            #                     if flag :
+            #                         memberName.append(item)
+            #                     #end if
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "ｂ×Ｄ"in line:   # ｂ×Ｄ
+            #             # if "ｺﾝｸﾘｰﾄ" in line:   # ｂ×Ｄ
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 if n2 >= 2*n1:
+            #                     for j in range(n1):
+            #                         # コンクリート.append(items2[n2-n1+j])
+            #                         コンクリート.append(items[n2-n1*2+j*2]+" "+ items[n2-n1*2+j*2+1])
+            #                     #next
+            #                 continue
+            #             #end if
+
+            #             if "上端"in line and ucount==0:
+            #                 ucount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     主筋上端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "下端"in line and scount==0:
+            #                 scount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     主筋下端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+                            
+            #             if "上端"in line and ucount==1:
+            #                 ucount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     材料上端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "下端"in line and scount==1:
+            #                 scount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     材料下端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+                        
+            #             if "上端"in line and ucount==2:
+            #                 ucount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     かぶり上端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "下端"in line and scount==2:
+            #                 scount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     かぶり下端.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if ucount==3 and scount==3:
+            #                 ucount += 1
+            #                 scount += 1
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     あばら筋.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+
+            #             if "材料"in line and ucount==4 and scount==4:
+            #                 n1 = len(itemCenter)
+            #                 n2 = len(items)
+            #                 # if n2 > n1*2:
+            #                 #     items2 = []
+            #                 #     for j in range(0,n2-1,2):
+            #                 #         items2.append(items[j]+items[j+1])
+            #                 #     #next
+            #                 # else:
+            #                 #     items2 = items
+            #                 # #end if
+            #                 # n2 = len(items2)
+            #                 for j in range(n1):
+            #                     あばら筋材料.append(items[n2-n1+j])
+            #                 #next
+            #                 continue
+            #             #end if
+                        
+            #         #end if
+            #     #next
+            #     if len(コンクリート)>0:
+            #         a=0
+            #         j = 0
+            #         for names in memberName:
+            #             names2 = names.split(',')
+            #             dic1 = {}
+            #             # j += 1
+            #             item = itemCenter[j][0]
+            #             if item == "端部":
+            #                 kind = ["端部","中央"]
+            #             elif item == "左端":
+            #                 kind = ["左端","中央","右端"]
+            #             elif item == "全断面":
+            #                 kind = ["全断面"]
+            #             #end if
+            #             kn = len(kind)
+            #             for k in range(kn):
+            #                 dic2 = {}
+            #                 dic2["コンクリート"]= コンクリート[j+k]
+            #                 dic2["主筋上端"]= 主筋上端[j+k]
+            #                 dic2["主筋下端"]= 主筋下端[j+k]
+            #                 dic2["材料上端"]= 材料上端[j+k]
+            #                 dic2["材料下端"]= 材料下端[j+k]
+            #                 dic2["かぶり上端"]= かぶり上端[j+k]
+            #                 dic2["かぶり下端"]= かぶり下端[j+k]
+            #                 dic2["あばら筋"]= あばら筋[j+k]
+            #                 dic2["あばら筋材料"]= あばら筋材料[j+k]
+            #                 dic1[kind[k]] = dic2
+            #             #next
+            #             j += kn
+                        
+            #             print(names2)
+            #             for name in names2:
+            #                 if name in self.BeamMemberSpan.keys():
+            #                     dic0 = self.BeamMemberSpan[name]
+            #                     dic0["断面諸元"] = dic1
+            #                     dic0["断面種類"] = kind
+            #                     self.BeamMemberSpan[name] = dic0
+            #                 else:
+            #                     dic0 = {}
+            #                     dic0["断面諸元"] = dic1
+            #                     dic0["断面種類"] = kind
+            #                     self.BeamMemberSpan[name] = dic0
+            #                 #end if
+            #             #next
+            #         #next
+            #     #end if
+            #     # ucount = 0
+            #     # scount = 0
+            #     # コンクリート = []
+            #     # 主筋上端 = []
+            #     # 主筋下端 = []
+            #     # 材料上端 = []
+            #     # 材料下端 = []
+            #     # かぶり上端 = []
+            #     # かぶり下端 = []
+            #     # あばら筋 = []
+            #     # あばら筋材料 = []
+            #     # memberName = []
+
+            # #end if
 
         #=================================================================================================
         #   検定比図のチェック
@@ -1615,13 +1999,13 @@ class CheckTool():
         
         if mode == "検定比図" :
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
-                for line in CharLines:
+                for CarDataOfline in CharLines:
                     i += 1
-                    t3 = line[0]
+                    t3 = CarDataOfline[0]
                     CharLine = CharData[i] # １行文のデータを読み込む
                     
                     # if "検定比" in t3 : # 「検定比」が現れた場合の処理
@@ -1684,7 +2068,7 @@ class CheckTool():
                         
         elif mode == "柱の検定表" : 
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
             if B_kind == "RC造" or B_kind == "SRC造" or B_kind == "":
                 # =======================================================
@@ -1694,9 +2078,9 @@ class CheckTool():
                     # lines =t1.splitlines()
                     i = -1
                     kmode = False
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         if not kmode :
                             if "検定比" in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
                                 kmode = True
@@ -1736,9 +2120,9 @@ class CheckTool():
                                     print('val={:.2f}'.format(val))
 
                     i = -1
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         
                         CharLine = CharData[i] # １行文のデータを読み込む
                         t4 = ""
@@ -1791,9 +2175,9 @@ class CheckTool():
                     i = -1
                     kmode = False
                     fword = "σc/fc"
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         if not kmode :
                             if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
                                 kmode = True
@@ -1862,7 +2246,7 @@ class CheckTool():
                 dic1 = self.BeamMemberSpan[key]
                 print(key,dic1)
                 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             if B_kind == "RC造" or B_kind == "SRC造" or B_kind == "":
                 # =======================================================
                 #   RC造およびSRC造の梁の検定表
@@ -1872,9 +2256,9 @@ class CheckTool():
                 
                     # lines =t1.splitlines()
                     i = -1
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         CharLine = CharData[i] # １行文のデータを読み込む
                         
                         if "検定比" in t3 : # 「検定比」が現れた場合の処理
@@ -1924,9 +2308,9 @@ class CheckTool():
                     i = -1
                     kmode = False
                     fword = "σb/fb"
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         if not kmode :
                             if fword in t3 : # 最初のfwordが現れたら「kmode」をTrue
                                 kmode = True
@@ -1986,7 +2370,7 @@ class CheckTool():
         #=================================================================================================
 
         elif mode == "壁の検定表":
-            outtext1 , CharData1 = self.MakeChar(page, interpreter2,device2)
+            outtext1 , CharData1 ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
             if len(outtext1) > 0:
                 i = -1
@@ -2111,15 +2495,15 @@ class CheckTool():
                         
         elif mode == "ブレースの検定表" : 
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
             if len(CharLines) > 0:
                     # lines =t1.splitlines()
                     i = -1
                     kmode = False
-                    for line in CharLines:
+                    for CarDataOfline in CharLines:
                         i += 1
-                        t3 = line[0]
+                        t3 = CarDataOfline[0]
                         fword = "Nt/Nat"
                         if not kmode :
                             if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
@@ -2233,7 +2617,7 @@ class CheckTool():
         
         if 検定比_Flag  :
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData , LineData = self.MakeChar(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1

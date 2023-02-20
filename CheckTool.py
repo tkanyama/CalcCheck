@@ -567,10 +567,37 @@ class CheckTool():
                     t3 = line[0]
                     CharLine = CharData[i] # １行文のデータを読み込む
                     
+                    # line = CharLines[i][0]
+                    line2 = ""
+                    xx= CharData[i][0][2]
+                    for Char in CharData[i]:
+                        if Char[1]>xx+3:
+                            line2 += " "
+                        line2 += Char[0]
+                        xx = Char[2]
+                    #next
+                    items = line2.split()
+                    # print(line)
+                    # print(items)
+                    a=0
+
                     # if "検定比" in t3 : # 「検定比」が現れた場合の処理
                     # print(t3)
                     st = 0
-                    t4 = t3.split()            # 文字列を空白で分割
+                    # t4 = t3.split()            # 文字列を空白で分割
+                    t4 = items
+
+
+
+
+
+
+
+
+                    # if "検定比" in t3 : # 「検定比」が現れた場合の処理
+                    # print(t3)
+                    # st = 0
+                    # t4 = t3.split()            # 文字列を空白で分割
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
                             t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
@@ -615,7 +642,7 @@ class CheckTool():
                             #end if
 
                             # 数値を検索を開始するを文字数分移動
-                            st = nn + ln + 1
+                            st = nn + ln 
                         #next
                     #end if
                 #next
@@ -1177,14 +1204,30 @@ class CheckTool():
             if len(CharLines) > 0:
                 i = -1
                 for line in CharLines:
+                    # print(line)
                     i += 1
                     t3 = line[0]
                     CharLine = CharData[i] # １行文のデータを読み込む
                     
+                    # line = CharLines[i][0]
+                    line2 = ""
+                    xx= CharData[i][0][2]
+                    for Char in CharData[i]:
+                        if Char[1]>xx+3:
+                            line2 += " "
+                        line2 += Char[0]
+                        xx = Char[2]
+                    #next
+                    items = line2.split()
+                    # print(line)
+                    # print(items)
+                    a=0
+
                     # if "検定比" in t3 : # 「検定比」が現れた場合の処理
                     # print(t3)
                     st = 0
-                    t4 = t3.split()            # 文字列を空白で分割
+                    # t4 = t3.split()            # 文字列を空白で分割
+                    t4 = items
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
                             t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
@@ -1229,7 +1272,7 @@ class CheckTool():
                             #end if
 
                             # 数値を検索を開始するを文字数分移動
-                            st = nn + ln + 1
+                            st = nn + ln
                         #next
                     #end if
                 #next
