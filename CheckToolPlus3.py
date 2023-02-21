@@ -85,7 +85,8 @@ class CheckTool():
     def __init__(self):
 
         self.BeamMemberSpan = {}    # 部材符号と諸元データの辞書
-        
+        self.memberData = {}
+        self.memberName = []
         # 源真ゴシック等幅フォント
         # GEN_SHIN_GOTHIC_MEDIUM_TTF = "/Library/Fonts/GenShinGothic-Monospace-Medium.ttf"
         GEN_SHIN_GOTHIC_MEDIUM_TTF = "./Fonts/GenShinGothic-Monospace-Medium.ttf"
@@ -1099,7 +1100,31 @@ class CheckTool():
         #next
 
 
+    def makePattern(self):
+        self.patternDic = {}
+        self.patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+']
+        # self.patternDic["断面寸法"]=['\d+\W*\d+','\d+×\d+']
+        self.patternDic["断面寸法"]=['\d+×\d+']
+        self.patternDic["コンクリート"]=['\(Fc\d+\)']
+        self.patternDic["配筋"]=['\d+/\d+-D\d+','\d+-D\d+']
+        self.patternDic["材料"]=['SD\d+\w*']
+        self.patternDic["かぶり"]=['\d+\.\d+/\d+\.\d+','\d+/\d+\.\d+','\d+/\d+','\d{2}']
+        self.patternDic["あばら筋"]=['\d+-\w+\d+@\d+']
+        self.PatternKeys = list(self.patternDic.keys())
+    #end def
 
+    def checkPattern(self,word):
+        print(word)
+        for key in self.PatternKeys:
+            p1 = self.patternDic[key]
+            for p in p1:
+                if re.match(p,word):
+                    return key
+                #end if
+            #next
+        #next
+        return ""
+    #end def
 
 
 
@@ -1277,79 +1302,24 @@ class CheckTool():
             dx = 3.0
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
-            # 縦線と横線を分ける。
+            self.makePattern()
+
+            # 縦線と横線をそれぞれ太線だけを分ける。
             if len(LineDatas) > 0 :
-                LineH = []            
-                LineV = []
-                for Line in LineDatas:
-                    if Line["angle"] == "H":
-                        LineH.append(Line)
-                    elif Line["angle"] == "V":                    
-                        LineV.append(Line)                        
-                    #end if
-                #next
-            #end if
-
-            # 同じライン上の縦線（太線）を合体させる。
-            if len(LineV)>0:
-                l1 = []
-                for line in LineV:
-                    l1.append(line["x0"])
-                #next
-                index=np.argsort(np.array(l1)) # [::-1]
-                LineV2 = []
-                for i in index:
-                    LineV2.append(LineV[i])
-                #next i
-                y0 = LineV2[0]["y0"]
-                y1 = LineV2[0]["y1"]
-                x0 = LineV2[0]["x0"]
-                x1 = LineV2[0]["x1"]
-                LineV3 = []
-                for i in range(len(LineV)):
-                    if LineV[i]["x0"]==x0:
-                        if LineV[i]["y0"]<y0:
-                            y0 = LineV[i]["y0"]
-                        #end if
-                        if LineV[i]["y1"]>y1:
-                            y1 = LineV[i]["y1"]
-                        #end if
-                    else:
-                        LineV3.append([x0,x1,y0,y1])
-                        # LineV3.append(x0)
-                        y0 = LineV[i]["y0"]
-                        y1 = LineV[i]["y1"]
-                        x0 = LineV[i]["x0"]
-                        x1 = LineV[i]["x1"]
-                    #end if
-                #next
-                LineV3.append([x0,x1,y0,y1])
-                # LineV3.append(x0)
-            #end if
-
-
-
-
-
-
-            # 縦線と横線をそれぞれ太線と細線に分ける。
-            if len(LineDatas) > 0 :
-                LineHBold = []
-                LineHThin = []                
+                LineHBold = []           
                 LineVBold = []
-                LineVThin = []
                 for Line in LineDatas:
                     if Line["angle"] == "H":
                         if Line["linewidth"]>0.9:
                             LineHBold.append(Line)
-                        else:
-                            LineHThin.append(Line)
+                        # else:
+                        #     LineHThin.append(Line)
                         #end if
                     elif Line["angle"] == "V":
                         if Line["linewidth"]>0.9:
                             LineVBold.append(Line)
-                        else:
-                            LineVThin.append(Line)
+                        # else:
+                        #     LineVThin.append(Line)
                         #end if
                     #end if
                 #next
@@ -1370,7 +1340,7 @@ class CheckTool():
                 y1 = LineV[0]["y1"]
                 x0 = LineV[0]["x0"]
                 x1 = LineV[0]["x1"]
-                LineVBold2 = []
+                LineVN = []
                 for i in range(len(LineV)):
                     if LineV[i]["x0"]==x0:
                         if LineV[i]["y0"]<y0:
@@ -1381,7 +1351,7 @@ class CheckTool():
                         #end if
                     else:
                         # LineVBold2.append([x0,x1,y0,y1])
-                        LineVBold2.append(x0)
+                        LineVN.append(x0)
                         y0 = LineV[i]["y0"]
                         y1 = LineV[i]["y1"]
                         x0 = LineV[i]["x0"]
@@ -1389,7 +1359,7 @@ class CheckTool():
                     #end if
                 #next
                 # LineVBold2.append([x0,x1,y0,y1])
-                LineVBold2.append(x0)
+                LineVN.append(x0)
             #end if
 
             # 同じライン上の横線（太線）を合体させる。     
@@ -1407,7 +1377,7 @@ class CheckTool():
                 y1 = LineH[0]["y1"]
                 x0 = LineH[0]["x0"]
                 x1 = LineH[0]["x1"]
-                LineHBold2 = []
+                LineHN = []
                 for i in range(len(LineH)):
                     if LineH[i]["y0"]==y0:
                         if LineV[i]["x0"]<x0:
@@ -1418,7 +1388,7 @@ class CheckTool():
                         #end if
                     else:
                         # LineHBold2.append([x0,x1,y0,y1])
-                        LineHBold2.append(y0)
+                        LineHN.append(y0)
                         y0 = LineH[i]["y0"]
                         y1 = LineH[i]["y1"]
                         x0 = LineH[i]["x0"]
@@ -1426,94 +1396,12 @@ class CheckTool():
                     #end if
                 #next
                 # LineHBold2.append([x0,x1,y0,y1])
-                LineHBold2.append(y0)
+                LineHN.append(y0)
             #end if
 
-            # 同じライン上の縦線（細線）を合体させる。
-            if len(LineVThin)>0:
-                l1 = []
-                for line in LineVThin:
-                    l1.append(line["x0"])
-                #next
-                index=np.argsort(np.array(l1))  # [::-1]
-                LineV = []
-                for i in index:
-                    LineV.append(LineVThin[i])
-                #next i
-                y0 = LineV[0]["y0"]
-                y1 = LineV[0]["y1"]
-                x0 = LineV[0]["x0"]
-                x1 = LineV[0]["x1"]
-                LineVThin2 = []
-                for i in range(len(LineV)):
-                    if LineV[i]["x0"]==x0:
-                        if LineV[i]["y0"]<y0:
-                            y0 = LineV[i]["y0"]
-                        #end if
-                        if LineV[i]["y1"]>y1:
-                            y1 = LineV[i]["y1"]
-                        #end if
-                    else:
-                        # LineVThin2.append([x0,x1,y0,y1])
-                        LineVThin2.append(x0)
-                        y0 = LineV[i]["y0"]
-                        y1 = LineV[i]["y1"]
-                        x0 = LineV[i]["x0"]
-                        x1 = LineV[i]["x1"]
-                    #end if
-                #next
-                # LineVThin2.append([x0,x1,y0,y1])
-                LineVThin2.append(x0)
-            #end if
-
-            # 同じライン上の横線（細線）を合体させる。     
-            if len(LineHThin)>0:
-                l1 = []
-                for line in LineHThin:
-                    l1.append(line["y0"])
-                #next
-                index=np.argsort(np.array(l1))[::-1]
-                LineH = []
-                for i in index:
-                    LineH.append(LineHThin[i])
-                #next i
-                y0 = LineH[0]["y0"]
-                y1 = LineH[0]["y1"]
-                x0 = LineH[0]["x0"]
-                x1 = LineH[0]["x1"]
-                LineHThin2 = []
-                for i in range(len(LineH)):
-                    if LineH[i]["y0"]==y0:
-                        if LineH[i]["x0"]<x0:
-                            x0 = LineH[i]["x0"]
-                        #end if
-                        if LineH[i]["x1"]>x1:
-                            x1 = LineH[i]["x1"]
-                        #end if
-                    else:
-                        LineHThin2.append([x0,x1,y0,y1])
-                        # LineHThin2.append(y0)
-                        y0 = LineH[i]["y0"]
-                        y1 = LineH[i]["y1"]
-                        x0 = LineH[i]["x0"]
-                        x1 = LineH[i]["x1"]
-                    #end if
-                #next
-                LineHThin2.append([x0,x1,y0,y1])
-                # LineHThin2.append(y0)
-            #end if
-
-            lx0=LineVThin2[0]
-            lx1=LineVBold2[0]
-            ly0=LineHBold2[1]
-            ly1=LineHBold2[2]
-            ltinV = []
-            for line in LineVThin:
-                if line["x0"]>lx0 and line["x0"]>lx1 and line["y0"]>=ly0 and line["y1"]>ly1:
-                    ltinV.append(line)
-                #end if
-            #next
-
+            SectionN = len(LineVN)
+            # self.memberData = []
+            # self.memberName = []
             if len(CharLines) > 0 :
                 LineWordDatas = []
                 wordlines = []
@@ -1652,39 +1540,173 @@ class CheckTool():
             a=0
             SectionNumber = len(stline)
             
-            patternDic = {}
-            patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+']
-            patternDic["断面寸法"]=['\d+.\d+','\d+×\d+']
-            patternDic["コンクリート"]=['\(Fc\d+\)']
-            patternDic["配筋"]=['\d+/\d+-D\d+','\d+-D\d+']
-            patternDic["材料"]=['SD\d+\w*']
-            patternDic["かぶり"]=['\d+\.\d+/\d+\.\d+','\d+/\d+\.\d+','\d+/\d+','\d{2}']
-            patternDic["あばら筋"]=['\d+-\w+\d+@\d+']
+            # patternDic = {}
+            # patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+']
+            # patternDic["断面寸法"]=['\d+.\d+','\d+×\d+']
+            # patternDic["コンクリート"]=['\(Fc\d+\)']
+            # patternDic["配筋"]=['\d+/\d+-D\d+','\d+-D\d+']
+            # patternDic["材料"]=['SD\d+\w*']
+            # patternDic["かぶり"]=['\d+\.\d+/\d+\.\d+','\d+/\d+\.\d+','\d+/\d+','\d{2}']
+            # patternDic["あばら筋"]=['\d+-\w+\d+@\d+']
             
-            print(re.match(patternDic["断面寸法"][0],"500×800"))
-            print(re.match(patternDic["断面寸法"][1],"500×800"))
-            print(re.match(patternDic["コンクリート"][0],"(Fc33)"))
-            print(re.match(patternDic["配筋"][0],"4/4-D32"))
-            print(re.match(patternDic["配筋"][1],"4-D32"))
-            print(re.match(patternDic["材料"][0],"SD390"))
-            print(re.match(patternDic["材料"][0],"SD390A"))
-            print(re.match(patternDic["あばら筋"][0],"3-D13@100"))
-            print(re.match(patternDic["あばら筋"][0],"3-TA13@100"))
-            print(re.match(patternDic["かぶり"][0],"50.5/43.5"))
-            print(re.match(patternDic["かぶり"][1],"50/43.5"))
-            print(re.match(patternDic["かぶり"][2],"50/43"))
-            print(re.match(patternDic["かぶり"][3],"50"))
+            # print(re.match(patternDic["断面寸法"][0],"500×800"))
+            # print(re.match(patternDic["断面寸法"][1],"500×800"))
+            # print(re.match(patternDic["コンクリート"][0],"(Fc33)"))
+            # print(re.match(patternDic["配筋"][0],"4/4-D32"))
+            # print(re.match(patternDic["配筋"][1],"4-D32"))
+            # print(re.match(patternDic["材料"][0],"SD390"))
+            # print(re.match(patternDic["材料"][0],"SD390A"))
+            # print(re.match(patternDic["あばら筋"][0],"3-D13@100"))
+            # print(re.match(patternDic["あばら筋"][0],"3-TA13@100"))
+            # print(re.match(patternDic["かぶり"][0],"50.5/43.5"))
+            # print(re.match(patternDic["かぶり"][1],"50/43.5"))
+            # print(re.match(patternDic["かぶり"][2],"50/43"))
+            # print(re.match(patternDic["かぶり"][3],"50"))
+            gloup = []
+            gloupItem = []
+            gloupSectionName = []
+            wn = 0
+            gloupN = 0
+            DataFlag = False
             
+            for i in range(len(LineWordDatas)):
+                WordDicMat = LineWordDatas[i]
+                words = []
+                for CharToWord in WordDicMat:
+                    words.append(CharToWord["word"])
+                #next
+                CarDataOfline = wordlines[i]
+                # if "端部" in line or "左端" in line or "全断面" in line:
+                if "端部" in words or "左端" in words or "全断面" in words:
+                    DataFlag = True
+                    wn = len(words)
+                    wi = 0
+                    while True:
+                        if words[wi] == "全断面":
+                            gloupItem.append(["全断面"])
+                            gloup.append([wi])
+                            # gloupSectionName.append("全断面") 
+                            wi += 1
+                        elif words[wi] == "端部":
+                            gloupItem.append(["端部","中央"])
+                            gloup.append([wi, wi+1])
+                            # gloupSectionName.append("端部") 
+                            # gloupSectionName.append("中央") 
+                            wi += 2
+                        elif words[wi] == "左端":
+                            gloupItem.append(["左端","中央","右端"])
+                            gloup.append([wi, wi+1, wi+2])
+                            # gloupSectionName.append("左端") 
+                            # gloupSectionName.append("中央") 
+                            # gloupSectionName.append("右端") 
+                            wi += 3
+                        #end if
+                        if wi >= wn:
+                            gloupN = len(gloup)
+                            break
+                        #end if
+                    #end while
+                elif "符号名" in words:
+                    wn2 = len(words)
+                    # self.memberName = []
+                    # self.self.memberData = {}
+                    sectionKind = []
+                    for i in range(gloupN):
+                        word = words[wn2 - gloupN + i]
+                        if self.checkPattern(word) == "符号名":
+                            self.memberData[word] = {}
+                            self.memberName.append(word)
+                        #end if
+                        for item in gloupItem[i]:
+                            self.memberData[word][item]={}
+                        #next
+                    #next
+                else:
+                    if DataFlag:
+                        wn2 = len(words)
+                        if wn2 >= wn:
+                            if wn2 >= wn * 2:
+                                c = 2
+                            else:
+                                c = 1
+                            #end if
+
+                            w0 = wn2 - wn * c
+                            for i in range(gloupN):
+                                k = -1
+                                for j in gloup[i]:
+                                    k += 1
+                                    word = words[w0 + j*c]
+                                    key = self.checkPattern(word)
+                                    print(key)
+                                    m1 = self.memberName[i]
+                                    m2 = gloupItem[i][k]
+                                    n=0
+                                    key2 = key
+                                    while True:
+                                        if key2 in self.memberData[m1][m2]:
+                                            n+=1
+                                            key2 = key + str(n)
+                                        else:
+                                            self.memberData[m1][m2][key2] = word
+                                            break
+                                        #end fi
+                                    #end while
+                                #next
+                            #next
+                            if c == 2:
+                                for i in range(gloupN):
+                                    k = -1
+                                    for j in gloup[i]:
+                                        k += 1
+                                        word = words[w0 + j*c + 1]
+                                        key = self.checkPattern(word)
+                                        print(key)
+                                        m1 = self.memberName[i]
+                                        m2 = gloupItem[i][k]
+                                        n=0
+                                        key2 = key
+                                        while True:
+                                            if key2 in self.memberData[m1][m2]:
+                                                n+=1
+                                                key2 = key + str(n)
+                                            else:
+                                                self.memberData[m1][m2][key2] = word
+                                                break
+                                            #end fi
+                                        #end while
+                                    #next
+                                #next
+                            #end if
+                            # else:
+                            #     c=1
+                            # #end if
+                            #     for i in range(gloupN):
+                            #         for j in gloup[i]:
+                            #             word = words[wn2 - gloupN*c + j*c]
+                            #             p = self.checkPattern(word)
+                            #             print(p)
+                        
+
+
+
+
+
+
+                    
+
+
+
             a=0
                     
-            mn = len(stline)
-            if mn>0 :
-                for i in range(mn):
-                    xmax = 100000.0
-                    for j in range(stline(i),edline(i)):
-                        LineWordData = LineWordDatas[j]
-                        if LineWordData[2]<xmax:
-                            xmax = LineWordData[2]
+            # mn = len(stline)
+            # if mn>0 :
+            #     for i in range(mn):
+            #         xmax = 100000.0
+            #         for j in range(stline(i),edline(i)):
+            #             LineWordData = LineWordDatas[j]
+            #             if LineWordData[2]<xmax:
+            #                 xmax = LineWordData[2]
 
 
 
@@ -1703,7 +1725,7 @@ class CheckTool():
             #     かぶり下端 = []
             #     あばら筋 = []
             #     あばら筋材料 = []
-            #     memberName = []
+            #     self.memberName = []
             #     itemsx = []
             #     nameCenter = []
                         
@@ -1764,7 +1786,7 @@ class CheckTool():
             #                 if len(コンクリート)>0:
             #                     a=0
             #                     j = 0
-            #                     for names in memberName:
+            #                     for names in self.memberName:
             #                         names2 = names.split(',')
             #                         dic1 = {}
             #                         # j += 1
@@ -1822,7 +1844,7 @@ class CheckTool():
             #                 かぶり下端 = []
             #                 あばら筋 = []
             #                 あばら筋材料 = []
-            #                 memberName = []
+            #                 self.memberName = []
             #                 for item in items:
             #                     item2 = item.split()
             #                     flag = True
@@ -1834,7 +1856,7 @@ class CheckTool():
             #                         #end if
             #                     #next
             #                     if flag :
-            #                         memberName.append(item)
+            #                         self.memberName.append(item)
             #                     #end if
             #                 #next
             #                 continue
@@ -2009,7 +2031,7 @@ class CheckTool():
             #     if len(コンクリート)>0:
             #         a=0
             #         j = 0
-            #         for names in memberName:
+            #         for names in self.memberName:
             #             names2 = names.split(',')
             #             dic1 = {}
             #             # j += 1
@@ -2064,7 +2086,7 @@ class CheckTool():
             #     # かぶり下端 = []
             #     # あばら筋 = []
             #     # あばら筋材料 = []
-            #     # memberName = []
+            #     # self.memberName = []
 
             # #end if
 
@@ -2935,6 +2957,8 @@ class CheckTool():
             # PDFを読み込む
             pdf = PdfReader(in_path, decompress=False)
 
+            self.memberData = {}
+            self.memberName = []
             i = 0
             for pageI in range(len(pageNo)):
                 pageN = pageNo[pageI]
