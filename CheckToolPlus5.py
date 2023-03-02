@@ -386,8 +386,9 @@ class CheckTool():
                 for i in range(len(x)):
                     F3.append(F1[x[i]])
                     t3 = F1[x[i]][0]
-                    if t3 != " ":
-                        t2 += t3
+                    t2 += t3
+                    # if t3 != " ":
+                    #     t2 += t3
                     #end if
                 #next
                 # t1 += t2 + "\n"
@@ -512,7 +513,10 @@ class CheckTool():
         
         # リスト「CY」から昇順の並び替えインデックッスを取得
         y=np.argsort(np.array(CY))  #[::-1]
-
+        t1H = []
+        t1V = []
+        CharDataH = []
+        CharDataV = []
         if len(CharData2) > 0:  # リストが空でない場合に処理を行う
             CharData3 = []
             # インデックスを用いて並べ替えた「CharData3」を作成
@@ -1920,7 +1924,10 @@ class CheckTool():
                 words.append(CharToWord["word"])
             #next
             CarDataOfline = wordlines[i]
-            # if "端部" in line or "左端" in line or "全断面" in line:
+            if "【小梁】" in words :
+                edline.append(i-2)
+                break
+
             if "端部" in words or "左端" in words or "全断面" in words:
                 header=words
                 headerCenter = []
@@ -1938,7 +1945,9 @@ class CheckTool():
                 stflag = True
             #end if
         #next
-        edline.append(len(LineWordDatas)-2)
+        if len(edline)<len(stline):
+            edline.append(len(LineWordDatas)-2)
+        #end if
         a=0
         SectionNumber = len(stline)
         
@@ -2247,6 +2256,10 @@ class CheckTool():
             #next
             CarDataOfline = wordlines[i]
             # if "端部" in line or "左端" in line or "全断面" in line:
+            if "【壁】" in words:
+                edline.append(i-1)
+                break
+
             if "端部" in words or "左端" in words or "全断面" in words:
                 header=words
                 headerCenter = []
@@ -2264,7 +2277,9 @@ class CheckTool():
                 stflag = True
             #end if
         #next
-        edline.append(len(LineWordDatas)-2)
+        if len(edline)<len(stline):
+            edline.append(len(LineWordDatas)-2)
+        #end if
         a=0
         SectionNumber = len(stline)
         
@@ -2322,6 +2337,9 @@ class CheckTool():
             #             break
             #         #end if
             #     #end while
+            if "【壁】" in words:
+                break
+
             if "符号名" in words:
                 # if "FG4A" in words:
                 #     a=0
@@ -2494,6 +2512,7 @@ class CheckTool():
         床伏図_Flag = False
         断面リスト梁_Flag = False
         断面リスト柱_Flag = False
+        断面リスト壁_Flag = False
         軸組図_Flag = False
     
         xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
@@ -2507,44 +2526,49 @@ class CheckTool():
                 print(texts)
                 if "柱の断面検定表"in texts :
                     柱_Flag = True
-                    break
+                    # break
                 #end if
                 if  "梁の断面検定表"in texts:
                     梁_Flag = True
-                    break
+                    # break
                 #end if
                 if "壁の断面検定表"in texts :                               
                     壁_Flag = True
-                    break
+                    # break
                 #end if
                 if "断面算定表"in texts and "杭基礎"in texts:
                     杭_Flag = True
-                    break
+                    # break
                 #end if
                 if "ブレースの断面検定表"in texts :
                     ブレース_Flag = True
-                    break
+                    # break
                 #end if
                 if "検定比図"in texts:
                     検定比図_Flag = True
-                    break
+                    # break
                 #end if
                 if "床伏図"in texts:
                     床伏図_Flag = True
-                    break
+                    # break
                 #end if
-                if "断面リスト"in texts and "大梁"in texts:
-                    断面リスト梁_Flag = True
-                    break
+                if "断面リスト"in texts :
+                    if "【大梁】"in texts or "【基礎大梁】"in texts:
+                        断面リスト梁_Flag = True
+                    if "【柱】"in texts:
+                        断面リスト柱_Flag = True
+                    if "【壁】"in texts:
+                        断面リスト壁_Flag = True
+                    # break
                 #end if
                 if "軸組図"in texts:
                     軸組図_Flag = True
-                    break
+                    # break
                 #end if
-                if "断面リスト"in texts and "柱"in texts:
-                    断面リスト柱_Flag = True
-                    break
-                #end if
+                # if "断面リスト"in texts and "柱"in texts:
+                #     断面リスト柱_Flag = True
+                #     break
+                # #end if
 
             #end if
         #next
@@ -2635,7 +2659,7 @@ class CheckTool():
         #   床伏図の部材寸法チェック
         #=================================================================================================
         
-        if mode == "床伏図" :
+        if 床伏図_Flag :
             CharLinesH , CharDataH, CharLinesV , CharDataV ,LineDatas = self.MakeCharPlus(page, interpreter2,device2)
             self.BeamMemberSearch(CharLinesH , CharDataH, CharLinesV , CharDataV)
             # keys = list(self.MemberPosition.keys())
@@ -2643,14 +2667,14 @@ class CheckTool():
             #     dic1 = self.MemberPosition[key]
             #     print(key,dic1)
 
-            # a=0
+            a=0
             # print(self.BeamMemberSpan)
 
         #=================================================================================================
         #   軸組図の部材寸法チェック
         #=================================================================================================
         
-        if mode == "軸組図" :
+        if 軸組図_Flag :
             CharLinesH , CharDataH, CharLinesV , CharDataV ,LineDatas = self.MakeCharPlus(page, interpreter2,device2)
             self.ColumnMemberSearch(CharLinesH , CharDataH, CharLinesV , CharDataV)
             # keys = list(self.MemberPosition.keys())
@@ -2658,7 +2682,7 @@ class CheckTool():
             #     dic1 = self.MemberPosition[key]
             #     print(key,dic1)
 
-            # a=0
+            a=0
             # print(self.BeamMemberSpan)
         
         
@@ -2666,7 +2690,7 @@ class CheckTool():
         #   断面リスト梁のチェック
         #=================================================================================================
         
-        if mode == "断面リスト梁" :
+        if 断面リスト梁_Flag :
             dx = 3.0
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             self.BeamSectionSearch(CharLines , CharData ,LineDatas)
@@ -2675,7 +2699,7 @@ class CheckTool():
         #   断面リスト柱のチェック
         #=================================================================================================
         
-        if mode == "断面リスト柱" :
+        if 断面リスト柱_Flag :
             dx = 3.0
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             self.ColumnSectionSearch(CharLines , CharData ,LineDatas)
@@ -2685,9 +2709,9 @@ class CheckTool():
         #   検定比図のチェック
         #=================================================================================================
         
-        if mode == "検定比図" :
+        if 検定比図_Flag :
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData ,LineData = self.MakeChar(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
@@ -2766,7 +2790,7 @@ class CheckTool():
         #   柱の検定表のチェック
         #=================================================================================================
                         
-        elif mode == "柱の検定表" : 
+        if 柱_Flag : 
 
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
@@ -2799,12 +2823,13 @@ class CheckTool():
                                 # kmodeの時には「検定比」の下にある数値だけを検出する。
                                 if char[1]>=zx0 and char[2]<=zx1:
                                     t4 += char[0]
-
+                            t4 = t4.replace(" ","")
                             if isfloat(t4): # 切り取った文字が数値の場合の処理
                                 a = float(t4)
                                 if a>=limit1 and a<1.0:
                                     # 数値がlimit以上の場合はデータに登録
-                                    nn = t3.index(t4)   # 数値の文字位置を検索
+                                    # nn = t3.index(t4)   # 数値の文字位置を検索
+                                    nn = t3.find(t4,0)   # 数値の文字位置を検索
                                     xxx0 = CharLine[nn][1]
                                     xxx1 = CharLine[nn+3][2]
                                     yyy0 = CharLine[nn][3]
@@ -2940,7 +2965,7 @@ class CheckTool():
         #   梁の検定表のチェック
         #=================================================================================================
                             
-        elif mode == "梁の検定表" : 
+        if 梁_Flag : 
             # keys = list(self.MemberPosition.keys())
             # for key in keys:
             #     dic1 = self.MemberPosition[key]
@@ -3064,9 +3089,11 @@ class CheckTool():
                     #next
 
 
-
+# ***************************************************************************************
+#   検定表から断面情報を抽出する。
 
             if len(CharLines) > 0:
+                # Pdfの線情報から縦線のみを抽出
                 if len(LineDatas)>0:
                     lineV = []
                     for line in LineDatas:
@@ -3074,7 +3101,7 @@ class CheckTool():
                             lineV.append(line)
                         #end if
                     #next
-
+                    #最も左側の線のX座標を検出
                     xmin = lineV[0]["x0"]
                     for line in lineV:
                         if line["x0"]<xmin:
@@ -3084,6 +3111,8 @@ class CheckTool():
                 else:
                     xmin = 0.0
                 #end if
+
+                # 線より左側にある文字データのみを抽出してデータを再構築
                 CharData2=[]
                 CharLines2 = []
                 for Char2 in CharData:
@@ -3196,8 +3225,10 @@ class CheckTool():
                             wordsInline.append(words)
                         #next
                         
-                        data1 = self.memberData[name]
-                        pos1 = self.MemberPosition[name]
+                        if name in self.memberData:
+                            data1 = self.memberData[name]
+                        if name in self.MemberPosition:    
+                            pos1 = self.MemberPosition[name]
                         a=1
 
 
@@ -3229,7 +3260,7 @@ class CheckTool():
         #   耐力壁の検定表のチェック
         #=================================================================================================
 
-        elif mode == "壁の検定表":
+        if 壁_Flag:
             outtext1 , CharData1 ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
             if len(outtext1) > 0:
@@ -3345,7 +3376,7 @@ class CheckTool():
                 #end while
             #end if
 
-        elif mode == "杭の検定表":
+        if 杭_Flag:
             pageFlag = False
 
 
@@ -3353,7 +3384,7 @@ class CheckTool():
         #   ブレースの検定表のチェック
         #=================================================================================================
                         
-        elif mode == "ブレースの検定表" : 
+        if ブレース_Flag : 
 
             CharLines , CharData ,LineDatas = self.MakeChar(page, interpreter2,device2)
             
@@ -3477,19 +3508,35 @@ class CheckTool():
         
         if 検定比_Flag  :
 
-            CharLines , CharData , LineData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
                 for line in CharLines:
+                    # print(line)
                     i += 1
                     t3 = line[0]
                     CharLine = CharData[i] # １行文のデータを読み込む
                     
+                    # line = CharLines[i][0]
+                    line2 = ""
+                    xx= CharData[i][0][2]
+                    for Char in CharData[i]:
+                        if Char[1]>xx+3:
+                            line2 += " "
+                        line2 += Char[0]
+                        xx = Char[2]
+                    #next
+                    items = line2.split()
+                    # print(line)
+                    # print(items)
+                    a=0
+
                     # if "検定比" in t3 : # 「検定比」が現れた場合の処理
                     # print(t3)
                     st = 0
-                    t4 = t3.split()            # 文字列を空白で分割
+                    # t4 = t3.split()            # 文字列を空白で分割
+                    t4 = items
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
                             t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
@@ -3534,7 +3581,7 @@ class CheckTool():
                             #end if
 
                             # 数値を検索を開始するを文字数分移動
-                            st = nn + ln + 1
+                            st = nn + ln
                         #next
                     #end if
                 #next
@@ -3800,6 +3847,11 @@ if __name__ == '__main__':
     time_sta = time.time()  # 開始時刻の記録
 
     CT = CheckTool()
+
+    # stpage = 170
+    # edpage = 300
+    # limit = 0.40
+    # filename = "サンプル計算書(1).pdf"
 
     stpage = 2
     edpage = 200
