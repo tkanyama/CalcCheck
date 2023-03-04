@@ -1224,7 +1224,7 @@ class CheckTool():
                 # print(line[0])
                 i += 1
                 if ("X1" in line[0] and "X2" in line[0]) or ("Y1" in line[0] and "Y2" in line[0]):
-                    print(line[0])
+                    # print(line[0])
                     items = line[0].split()
                     flag = True
                     for item in items:
@@ -1268,7 +1268,7 @@ class CheckTool():
                 for i in range(stline,edline):
                     # i += 1
                     line = CharLinesH2[i][0]
-                    print(line)
+                    # print(line)
                     items = line.split()
                     line2 = line.replace(" ","")
                     st = 0
@@ -1842,7 +1842,7 @@ class CheckTool():
     #end def
 
     def checkPattern(self,word):
-        print(word)
+        # print(word)
         for key in self.PatternKeys:
             p1 = self.patternDic[key]
             for p in p1:
@@ -2064,7 +2064,7 @@ class CheckTool():
                     gloupN2=gloupN
                     for k in range(gloupN-wn2+1):
                         nnn = len(gloup)-k-1
-                        print(nnn)
+                        # print(nnn)
                         wn1 -= len(gloup[nnn])
                     gloupN2 -= gloupN-wn2+1
                     g = []
@@ -2077,7 +2077,7 @@ class CheckTool():
                     gloup2 = gloup
                     wn1 = wn
                 #enf ig
-                print("wn1=",wn1)
+                # print("wn1=",wn1)
 
                 #end if
                 # self.memberName = []
@@ -2087,7 +2087,7 @@ class CheckTool():
                 for ii in range(gloupN2):
                     word = words[wn2 - gloupN2 + ii]
                     sname = word.split(",")
-                    print(sname)
+                    # print(sname)
                     if len(sname) == 1:
                         gloupSectionName.append([word])
                         self.memberData[word] = {}
@@ -2124,13 +2124,13 @@ class CheckTool():
                             k = -1
                             for j in gloup2[ii]:
                                 k += 1
-                                print(words)
-                                print(wn,wn1,wn2)
-                                print(gloupN2,w0,j,c)
-                                print(w0 + j*c)
+                                # print(words)
+                                # print(wn,wn1,wn2)
+                                # print(gloupN2,w0,j,c)
+                                # print(w0 + j*c)
                                 word = words[w0 + j*c]
                                 key = self.checkPattern(word)
-                                print(key)
+                                # print(key)
                                 
                                 mm1 = gloupSectionName[ii]
                                 for m1 in mm1:
@@ -2158,7 +2158,7 @@ class CheckTool():
                                     k += 1
                                     word = words[w0 + j*c + 1]
                                     key = self.checkPattern(word)
-                                    print(key)
+                                    # print(key)
                                     mm1 = gloupSectionName[ii]
                                     for m1 in mm1:
                                         m2 = gloupItem[ii][k]
@@ -2431,7 +2431,7 @@ class CheckTool():
                 for ii in range(gloupN):
                     word = words[wn2 - gloupN + ii]
                     sname = word.split(",")
-                    print(sname)
+                    # print(sname)
                     if len(sname) == 1:
                         gloupSectionName.append([word])
                         self.memberData[word] = {}
@@ -2468,13 +2468,13 @@ class CheckTool():
                             k = -1
                             for j in gloup[ii]:
                                 k += 1
-                                print(words)
-                                print(wn,wn1,wn2)
-                                print(gloupN,w0,j,c)
-                                print(w0 + j*c)
+                                # print(words)
+                                # print(wn,wn1,wn2)
+                                # print(gloupN,w0,j,c)
+                                # print(w0 + j*c)
                                 word = words[w0 + j*c]
                                 key = self.checkPattern(word)
-                                print(key)
+                                # print(key)
                                 
                                 mm1 = gloupSectionName[ii]
                                 for m1 in mm1:
@@ -2502,7 +2502,7 @@ class CheckTool():
                                     k += 1
                                     word = words[w0 + j*c + 1]
                                     key = self.checkPattern(word)
-                                    print(key)
+                                    # print(key)
                                     mm1 = gloupSectionName[ii]
                                     for m1 in mm1:
                                         m2 = gloupItem[ii][k]
@@ -2575,7 +2575,7 @@ class CheckTool():
             # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
             if isinstance(lt, LTTextContainer):
                 texts += lt.get_text()
-                print(texts)
+                # print(texts)
                 if "柱の断面検定表"in texts :
                     柱_Flag = True
                     # break
@@ -3195,7 +3195,7 @@ class CheckTool():
                     CharLine = CharData2[i] # １行文のデータを読み込む
                     name = t3.replace(" ","").replace("[","").replace("]","")
                     kind = self.checkPattern(name)
-                    print(kind)
+                    # print(kind)
                     if kind == "符号名":
                         if flag1 :
                             edline.append(i-1)
