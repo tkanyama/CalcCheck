@@ -899,7 +899,7 @@ class CheckTool():
                                         jj += 1
                                         if ym <= y + dv and ym>=y-dv:
                                             # yposition = Yname[jj]
-                                            position.append(Yname[j])
+                                            position.append(Yname[jj])
                                             break
                                         #end if
                                     #next
@@ -2542,6 +2542,8 @@ class CheckTool():
         #============================================================
         pageFlag = False
         ResultData = []
+        pageFlag2 = False
+        ResultData2 = []
         limit1 = limit
         limit2 = limit
         limit3 = limit
@@ -2699,7 +2701,7 @@ class CheckTool():
 
         if mode == "" :     # 該当しない場合はこのページの処理は飛ばす。
             print("No Data")
-            return False,[]
+            return False,[],False,[]
         else:
             print(mode)
         #end if
@@ -3214,6 +3216,10 @@ class CheckTool():
                 if memberN>0:
                     for i in range(memberN):
                         name = MembarNames[i]
+                        n = name.find("耐",0)
+                        if n>0:
+                            name = name[:n]
+                        #end if
                         wordsPosiotion = []
                         wordsInline = []
                         for j in range(stline[i],edline[i]):
@@ -3275,6 +3281,89 @@ class CheckTool():
                             wordsInline.append(words)
                         #next
                         
+                        ln = len(wordsInline)
+                        for j in range(ln):
+                            if j == 0:  # 符号名
+                                name1 = wordsInline[j]
+                            elif j == 1:    # 位置
+                                if name == "FG4A":
+                                    a=0
+                                pos1 = []
+                                pos2 = []
+                                if name in self.MemberPosition:    
+                                    data1 = self.MemberPosition[name]['図面情報']
+                                    for data in data1:
+                                        if len(data['位置'])>0 :
+                                            pos1.append(data['位置'])
+                                        #end if
+                                #end if
+                                line = wordsInline[j]
+                                position2 = []
+                                for item in line:
+                                    position2.append(item)
+                                #next
+                                position2.sort()
+                                # y=np.argsort(np.array(position2))  #[::-1]
+                                # wordsPosiotion2 = []
+                                # for k in y:
+                                #     wordsPosiotion2.append(wordsPosiotion[k])
+                                # #next
+                                flag = False
+                                flag2 = []
+                                y = []
+                                for pos in pos1:
+                                    flag = False
+                                    y=np.argsort(np.array(pos))  #[::-1]
+                                    pos.sort()
+                                    flag2 = []
+                                    # y = []
+                                    if len(position2) == len(pos):
+                                        flag1 = True
+                                        for k in range(len(pos)):
+                                            if pos[k] == position2[k]:
+                                                flag1 = flag1 and True
+                                                flag2.append(True)
+                                            else:
+                                                flag1 = flag1 and False
+                                                flag2.append(False)
+                                                # break
+                                            #end if
+                                        #next
+                                        flag = flag1
+                                        if flag1 :
+                                            pos2 = pos
+                                            break
+                                    else:
+                                        for k in range(len(pos)):
+                                            flag2.append(False)
+                                        #next
+                                        flag = False
+                                    #end if
+                                
+                                words = []
+                                for k in y:
+                                    words.append(wordsPosiotion[j][k])
+                                #next
+                                k = -1
+                                for word in words:
+                                    k += 1
+                                    a = pos[y[k]]
+                                    xxx0 = word[1]
+                                    yyy0 = word[3]
+                                    width3 = word[2]-word[1]
+                                    height3= word[4]-word[3]
+                                    ResultData2.append([a,[xxx0, yyy0, width3, height3],flag2[y[k]]])
+                                            
+                                pageFlag2 = True
+
+                            elif j == 2:    # 断面位置
+                                a=0
+                            elif j == 3:    # 断面寸法
+                                a=0
+                            else:   # 以下、鉄筋の種類
+                                a=0
+
+
                         if name in self.memberData:
                             data1 = self.memberData[name]
                         if name in self.MemberPosition:    
@@ -3508,7 +3597,7 @@ class CheckTool():
         
         #==========================================================================
         #  検出結果を出力する
-        return pageFlag, ResultData
+        return pageFlag, ResultData, pageFlag2, ResultData2
     #end def
     #*********************************************************************************
 
@@ -3711,6 +3800,10 @@ class CheckTool():
 
         pageResultData = []
         pageNo = []
+        pageResultData2 = []
+        pageNo2 = []
+        pageFlag = False
+        pageFlag2 = False
 
         try:
             with open(pdf_file, 'rb') as fp:
@@ -3750,8 +3843,9 @@ class CheckTool():
                             # 構造計算書がSS7の場合の処理
                             #============================================================
 
-                            pageFlag, ResultData = self.SS7(page, limit, interpreter, device, interpreter2, device2)
-
+                            pageFlag, ResultData, pageFlag2, ResultData2 = self.SS7(page, limit, interpreter, device, interpreter2, device2)
+                            if pageFlag2:
+                                a=0
                         # 他の種類の構造計算書を処理する場合はここに追加
                         # elif kind == "****":
                         #     pageFlag, ResultData = self.***(page, limit, interpreter, device, interpreter2, device2)
@@ -3766,10 +3860,20 @@ class CheckTool():
                             # return False
                         #end if
 
-                    if pageFlag : 
+                    if pageFlag or pageFlag2 : 
                         pageNo.append(pageI)
-                        pageResultData.append(ResultData)
+                        if pageFlag:
+                            pageResultData.append(ResultData)
+                        else:
+                            pageResultData.append([])
+                        #end if
+                        if pageFlag2 : 
+                            pageResultData2.append(ResultData2)
+                        else:
+                            pageResultData2.append([])
+                        #end if
                     #end if
+                    
                 #next
 
                 fp.close()
@@ -3814,6 +3918,7 @@ class CheckTool():
             pageSizeY = float(PaperSize[pageN-1][1])
             page = pdf.pages[pageN - 1]
             ResultData = pageResultData[pageI]
+            ResultData2 = pageResultData2[pageI]
             # PDFデータへのページデータの展開
             pp = pagexobj(page) #ページデータをXobjへの変換
             rl_obj = makerl(cc, pp) # ReportLabオブジェクトへの変換  
@@ -3827,37 +3932,83 @@ class CheckTool():
 
             else:   # ２ページ目以降は以下の処理
                 pn = len(ResultData)
+                if pn > 0:
+                    # ページの左肩に検出個数を印字
+                    cc.setFillColor("red")
+                    font_name = "ipaexg"
+                    cc.setFont(font_name, 12)
+                    t2 = "検索個数 = {}".format(pn)
+                    cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
 
-                # ページの左肩に検出個数を印字
-                cc.setFillColor("red")
-                font_name = "ipaexg"
-                cc.setFont(font_name, 12)
-                t2 = "検索個数 = {}".format(pn)
-                cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
+                    # 該当する座標に四角形を描画
+                    for R1 in ResultData:
+                        a = R1[0]
+                        origin = R1[1]
+                        flag = R1[2]
+                        x0 = origin[0]
+                        y0 = origin[1]
+                        width = origin[2]
+                        height = origin[3]
 
-                # 該当する座標に四角形を描画
-                for R1 in ResultData:
-                    a = R1[0]
-                    origin = R1[1]
-                    flag = R1[2]
-                    x0 = origin[0]
-                    y0 = origin[1]
-                    width = origin[2]
-                    height = origin[3]
+                        # 長方形の描画
+                        cc.setFillColor("white", 0.5)
+                        cc.setStrokeColorRGB(1.0, 0, 0)
+                        cc.rect(x0, y0, width, height, fill=0)
 
-                    # 長方形の描画
-                    cc.setFillColor("white", 0.5)
-                    cc.setStrokeColorRGB(1.0, 0, 0)
-                    cc.rect(x0, y0, width, height, fill=0)
+                        if flag:    # "壁の検定表"の場合は、四角形の右肩に数値を印字
+                            cc.setFillColor("red")
+                            font_name = "ipaexg"
+                            cc.setFont(font_name, 7)
+                            t2 = " {:.2f}".format(a)
+                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                        #end if
+                    #next
+                #end if
 
-                    if flag:    # "壁の検定表"の場合は、四角形の右肩に数値を印字
-                        cc.setFillColor("red")
-                        font_name = "ipaexg"
-                        cc.setFont(font_name, 7)
-                        t2 = " {:.2f}".format(a)
-                        cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
-                    #end if
-                #next
+                pn2 = len(ResultData2)
+                if pn2 > 0:
+                    # ページの左肩に検出個数を印字
+                    cc.setFillColor("red")
+                    font_name = "ipaexg"
+                    cc.setFont(font_name, 12)
+                    t2 = "検索個数 = {}".format(pn)
+                    cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
+
+                    # 該当する座標に四角形を描画
+                    for R1 in ResultData2:
+                        a = R1[0]
+                        origin = R1[1]
+                        flag = R1[2]
+                        x0 = origin[0]
+                        y0 = origin[1]
+                        width = origin[2]
+                        height = origin[3]
+
+                        # 長方形の描画
+                        if flag:    # 一致する場合
+                            cc.setFillColor("white", 0.5)
+                            cc.setStrokeColorRGB(0.0, 1.0, 0.0)
+                            cc.rect(x0, y0, width, height, fill=0)
+                            cc.setFillColor("green")
+                            font_name = "ipaexg"
+                            cc.setFont(font_name, 5)
+                            t2 = a
+                            # t2 = " {:.2f}".format(a)
+                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                        else:
+                            cc.setFillColor("white", 0.5)
+                            cc.setStrokeColorRGB(1.0, 0.0, 0.0)
+                            cc.rect(x0, y0, width, height, fill=0)
+                            cc.setFillColor("red")
+                            font_name = "ipaexg"
+                            cc.setFont(font_name, 5)
+                            t2 = a
+                            # t2 = " {:.2f}".format(a)
+                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                        #end if
+                    #next
+                #end if
+
             #end if
 
             # ページデータの確定
@@ -3898,14 +4049,14 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    # stpage = 170
+    # stpage = 2
     # edpage = 300
-    # limit = 0.40
+    # limit = 0.95
     # filename = "サンプル計算書(1).pdf"
 
     stpage = 2
     edpage = 200
-    limit = 0.70
+    limit = 0.95
     filename = "サンプル計算書(1)軸力図.pdf"
 
     # stpage = 100
