@@ -956,6 +956,8 @@ class CheckTool():
                 #next
                 # line = CharLinesV[i][0]
                 # print(line)
+                if "FG4A" in line:
+                        a=0
                 items = line.split()
                 line2 = line.replace(" ","")
                 st = 0
@@ -1068,34 +1070,34 @@ class CheckTool():
                                         #end if
                                     #next
 
-                                d1 = {}
-                                d1["スパン"] = str(ylen)
-                                d1["位置"] = position
-                                # d1["層"] = FloorName
-                                # d1["X通"] = xposition
-                                # d1["Y通"] = yposition   
-                                if not item in self.MemberPosition:
-                                    # d1 = [[str(xlen),FloorName, xposition,yposition]]
-                                    dic1 = {}
-                                    dic1["図面情報"] = [d1]
-                                    self.MemberPosition[item] = dic1
-                                    # self.BeamMemberSpan[item2] = d1
-                                    # self.memberSpan[item2] = str(Xlength2[j])
-                                    break
-                                else:
-                                    dic1 = self.MemberPosition[item]
-                                    d2= dic1["図面情報"]
-                                    d2.append(d1)
-                                    dic1["図面情報"] = d2
-                                    self.MemberPosition[item] = dic1
-                            
-                                    # d1 = self.BeamMemberSpan[item2]
-                                    # d2 = d1
-                                    # d2.append([str(xlen),FloorName,xposition,yposition])
-                                    # # d3 = [d1[0],d2]
-                                    # self.BeamMemberSpan[item2] = d2
-                                    break
-                                #end if
+                            d1 = {}
+                            d1["スパン"] = str(ylen)
+                            d1["位置"] = position
+                            # d1["層"] = FloorName
+                            # d1["X通"] = xposition
+                            # d1["Y通"] = yposition   
+                            if not item in self.MemberPosition:
+                                # d1 = [[str(xlen),FloorName, xposition,yposition]]
+                                dic1 = {}
+                                dic1["図面情報"] = [d1]
+                                self.MemberPosition[item] = dic1
+                                # self.BeamMemberSpan[item2] = d1
+                                # self.memberSpan[item2] = str(Xlength2[j])
+                                # break
+                            else:
+                                dic1 = self.MemberPosition[item]
+                                d2= dic1["図面情報"]
+                                d2.append(d1)
+                                dic1["図面情報"] = d2
+                                self.MemberPosition[item] = dic1
+                        
+                                # d1 = self.BeamMemberSpan[item2]
+                                # d2 = d1
+                                # d2.append([str(xlen),FloorName,xposition,yposition])
+                                # # d3 = [d1[0],d2]
+                                # self.BeamMemberSpan[item2] = d2
+                                # break
+                            #end if
 
 
 
@@ -2111,6 +2113,8 @@ class CheckTool():
 
             else:
                 if DataFlag:
+                    # if "FG4A" in words:
+                    #     a=0
                     wn2 = len(words)
                     if wn2 > wn1:
                         if wn2 > wn1 * 2:
@@ -3289,7 +3293,7 @@ class CheckTool():
                                 if name == "FG4A":
                                     a=0
                                 pos1 = []
-                                pos2 = []
+                                # pos2 = []
                                 if name in self.MemberPosition:    
                                     data1 = self.MemberPosition[name]['図面情報']
                                     for data in data1:
@@ -3297,12 +3301,13 @@ class CheckTool():
                                             pos1.append(data['位置'])
                                         #end if
                                 #end if
-                                line = wordsInline[j]
+                                line = wordsInline[j]   # 検定表の位置
                                 position2 = []
                                 for item in line:
                                     position2.append(item)
                                 #next
-                                position2.sort()
+                                y1=np.argsort(np.array(position2)) 
+                                # position2.sort()
                                 # y=np.argsort(np.array(position2))  #[::-1]
                                 # wordsPosiotion2 = []
                                 # for k in y:
@@ -3310,17 +3315,17 @@ class CheckTool():
                                 # #next
                                 flag = False
                                 flag2 = []
-                                y = []
+                                y2 = []
                                 for pos in pos1:
                                     flag = False
-                                    y=np.argsort(np.array(pos))  #[::-1]
-                                    pos.sort()
+                                    y2=np.argsort(np.array(pos))  #[::-1]
+                                    # pos.sort()
                                     flag2 = []
                                     # y = []
                                     if len(position2) == len(pos):
                                         flag1 = True
                                         for k in range(len(pos)):
-                                            if pos[k] == position2[k]:
+                                            if pos[y2[k]] == position2[y1[k]]:
                                                 flag1 = flag1 and True
                                                 flag2.append(True)
                                             else:
@@ -3341,18 +3346,18 @@ class CheckTool():
                                     #end if
                                 
                                 words = []
-                                for k in y:
+                                for k in y1:
                                     words.append(wordsPosiotion[j][k])
                                 #next
                                 k = -1
                                 for word in words:
                                     k += 1
-                                    a = pos[y[k]]
+                                    a = pos[y2[k]]
                                     xxx0 = word[1]
                                     yyy0 = word[3]
                                     width3 = word[2]-word[1]
                                     height3= word[4]-word[3]
-                                    ResultData2.append([a,[xxx0, yyy0, width3, height3],flag2[y[k]]])
+                                    ResultData2.append([a,[xxx0, yyy0, width3, height3],flag2[k]])
                                             
                                 pageFlag2 = True
 
@@ -3968,7 +3973,11 @@ class CheckTool():
                 pn2 = len(ResultData2)
                 if pn2 > 0:
                     # ページの左肩に検出個数を印字
-                    cc.setFillColor("red")
+                    if pn > 0:
+                        cc.setFillColor("red")
+                    else:
+                        cc.setFillColor("green")
+                    #end if
                     font_name = "ipaexg"
                     cc.setFont(font_name, 12)
                     t2 = "検索個数 = {}".format(pn)
