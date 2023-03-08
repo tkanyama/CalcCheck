@@ -1827,7 +1827,8 @@ class CheckTool():
 
     def makePattern(self):
         self.patternDic = {}
-        self.patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+','\d+C\d+','\d+P\d+']
+        # self.patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+','\d+C\d+','\d+P\d+']
+        self.patternDic["符号名"]=['\S*\d{1,2}G\d{1,2}','\S*RG\d{1,2}','\S*FG\d{1,2}','\d{1,2}C\d{1,2}','\d{1,2}P\d{1,2}']
         # self.patternDic["断面寸法"]=['\d+\S?\d+','\d+×\d+']
         self.patternDic["断面寸法"]=['\d+×\d+']
         self.patternDic["コンクリート"]=['\(Fc\d+\)']
@@ -3016,6 +3017,445 @@ class CheckTool():
                     #next
                 #end if
             #end if
+
+            # ***************************************************************************************
+            #   検定表から断面情報を抽出する。
+            # ***************************************************************************************
+            
+            if len(CharLines) > 0:
+                # Pdfの線情報から縦線のみを抽出
+                if len(LineDatas)>0:
+                    lineV = []
+                    for line in LineDatas:
+                        if line["angle"] == "V":
+                            lineV.append(line)
+                        #end if
+                    #next
+                    #最も左側の線のX座標を検出
+                    xmin = lineV[0]["x0"]
+                    for line in lineV:
+                        if line["x0"]<xmin:
+                            xmin = line["x0"]
+                        #end if
+                    #next
+                else:
+                    xmin = 0.0
+                #end if
+
+                # 線より左側にある文字データのみを抽出してデータを再構築
+                CharData2=[]
+                CharLines2 = []
+                for Char2 in CharData:
+                    line = []
+                    t1 = ""
+                    for Char in Char2:
+                        if Char[2]<xmin:
+                            line.append(Char)
+                            t1 += Char[0]
+                        #end if
+                    #next
+                    if t1 != "":
+                        CharData2.append(line)
+                        CharLines2.append([t1])
+                    #end if
+                #next
+
+
+                i = -1
+                stline = []
+                edline = []
+                MembarNames = []
+                flag1 = False
+                for CarDataOfline in CharLines2:
+                    i += 1
+                    
+                    t3 = CarDataOfline[0]
+                    CharLine = CharData2[i] # １行文のデータを読み込む
+                    tt3 = t3.split()
+                    for name in tt3:
+                        name = name.replace(" ","").replace("[","").replace("]","")
+                        kind = self.checkPattern(name)
+                        print(name,kind)
+                        if kind == "符号名":
+                            if flag1 :
+                                edline.append(i-1)
+                                flag1=False
+                            #end if                        
+                            stline.append(i)
+                            MembarNames.append(name)
+                            flag1 = True
+                            break
+                        #end if
+                    #next
+                #next
+                if flag1 :
+                    edline.append(len(CharLines2)-2)
+                    flag1=False
+                #end if
+
+                
+                memberN = len(stline)
+                if memberN>0:
+                    for i in range(memberN):
+                        name = MembarNames[i]
+                        # print(name)
+                        n = name.find("耐",0)
+                        if n>0:
+                            name = name[:n]
+                        #end if
+
+                        # 断面リストからの情報を抽出
+
+                        # XWire1 = []     # 上端主筋（左端、中央、右端）
+                        # YWire1 = []     # 下端主筋（左端、中央、右端）
+                        # stirrups1 = ""      # あばら筋
+                        # sectionSize1 = ""
+                        data1 = self.memberData[name]
+                        if "全断面" in data1:
+                            sectionSize1 = str(data1["全断面"]["断面寸法1"])
+                            XWireT1 = str(data1["全断面"]["配筋1"])
+                            YWireT1 = str(data1["全断面"]["配筋2"])
+                            Xstirrups1 =  str(data1["全断面"]["あばら筋1"])
+                            Ystirrups1 =  str(data1["全断面"]["あばら筋2"])
+                            if "配筋3" in data1["全断面"]:
+                                XWireB1 = str(data1["全断面"]["配筋3"])
+                                YWireB1 = str(data1["全断面"]["配筋4"])
+                                # XstirrupsB1 =  str(data1["全断面"]["あばら筋3"])
+                                # YstirrupsB1 =  str(data1["全断面"]["あばら筋4"])
+                            else:
+                                XWireB1 = XWireT1
+                                YWireB1 = YWireT1
+                                # XstirrupsB1 =  Xstirrups1
+                                # YstirrupsB1 =  Ystirrups1
+                            #end if
+                        #end if
+                        data2 = self.MemberPosition[name]
+                        length1 = str(data2["図面情報"][0]["スパン"])
+                        
+                        wordsPosiotion = []
+                        wordsInline = []
+                        
+                        LineNo1 = 0     # 符号名
+                        LineNo2 = 1     # 配置
+                        LineNo3 = 2     # 方向 X or Y
+                        LineNo4 = 3     # 断面寸法
+                        LineNo5 = 4     # 主筋T
+                        LineNo6 = 5     # 主筋B
+                        LineNo7 = 6     # 帯筋T
+                        LineNo8 = 7     # 帯筋B
+                        
+                        # k=-1
+                        # for j in range(stline[i],edline[i]):
+                        #     k += 1
+                        #     Line = str(CharLines2[j])
+                        #     # print(Line)
+                        #     if Line.find("上端",0)>0:
+                        #         LineNo5 = k
+                        #     elif Line.find("下端",0)>0:
+                        #         LineNo6 = k
+                        #     elif Line.find("あばら",0)>0:
+                        #         LineNo7 = k
+                        #     #end if
+                        # #next
+
+                        k = -1
+                        for j in range(stline[i],edline[i]):
+                            k += 1
+                            CharLine = CharData2[j]
+                            # CharLine = CharLine.replase(" ","")                           
+                            words = []
+                            wordsP1 = []
+                            n=0
+                            while True:
+                                if CharLine[n][0] != " " and CharLine[n][0] != "[" and CharLine[n][0] != "]":
+                                    break
+                                else:
+                                    n += 1
+                                #end if
+                            #end while
+                            word = CharLine[n][0]
+                            xx0 = CharLine[n][1]
+                            xx1 = CharLine[n][2]
+                            for k in range(len(CharLine)-n-1):
+                                c = CharLine[k+n+1]
+                                t = c[0]
+                                x0 = c[1]
+                                x1 = c[2]
+                                y0 = c[3]
+                                y1 = c[4]
+                                if x0<=xx1+3:
+                                    if t != " " and t != "[" and t != "]":
+                                        word += t
+                                        xx1 = c[2]
+                                else:
+                                    if len(word)>1:
+                                        words.append(word)
+                                        xm = (xx0+xx1)/2.0
+                                        ym = (y0+y1)/2.0
+                                        wordsP1.append([word,xx0,xx1,y0,y1,xm,ym])
+                                        if t != " " and t != "[" and t != "]":
+                                            word = t
+                                            xx0 = x0
+                                            xx1 = x1    
+                                        else:
+                                            word = ""
+                                            xx0 = x0
+                                            xx1 = x1
+                                        #end if
+                                    else:
+                                        if t != " " and t != "[" and t != "]":
+                                            word = t
+                                            xx0 = x0
+                                            xx1 = x1
+                                    #end if
+                                #end if
+                            #next
+                            if len(word)>1:
+                                words.append(word)
+                                xm = (xx0+xx1)/2.0
+                                ym = (y0+y1)/2.0
+                                wordsP1.append([word,xx0,xx1,y0,y1,xm,ym])
+                            #end if
+                            wordsPosiotion.append(wordsP1)
+                            wordsInline.append(words)
+                            
+                        #next
+
+                        sectionSize2 = ""
+                        XWireT2 = ""
+                        YWireT2 = ""
+                        Xstirrups2 =  ""
+                        Ystirrups2 =  ""
+                        
+                        XWireB2 = ""
+                        YWireB2 = ""
+                        # XstirrupsB2 =  ""
+                        # YstirrupsB2 =  ""
+
+                        # upperWire2 = []
+                        # lowerWire2 = []
+                        # wireName1 = [[],[],[]]
+                        # wireName2 = [[],[],[]]
+                        # SectionPos = []
+                        dx1 = 15
+                        ln = len(wordsInline)
+                        for j in range(ln):
+                            if j == LineNo1:  # 符号名
+                                name1 = wordsInline[j][0]
+                            elif j == LineNo2:    # 位置
+                                if name == "FG4A":
+                                    a=0
+                                pos1 = []
+                                # pos2 = []
+                                if name in self.MemberPosition:    
+                                    data2 = self.MemberPosition[name]['図面情報']
+                                    for data in data2:
+                                        if len(data['位置'])>0 :
+                                            pos1.append(data['位置'])
+                                        #end if
+                                #end if
+                                line = wordsInline[j]   # 検定表の位置
+                                position2 = []
+                                for k in range(3):
+                                    position2.append(line[k])
+                                #next
+                                length2 = line[4]
+                                y1=np.argsort(np.array(position2)) 
+                                
+                                # flag = False
+                                flag2 = []
+                                y2 = []
+                                for pos in pos1:
+                                    # flag = False
+                                    # pos.sort()
+                                    flag2 = []
+                                    # y = []
+                                    pos2 = []
+                                    for p1 in pos:
+                                        pos2.append(p1.replace("FL","F"))
+                                    #next
+                                    pos = pos2
+                                    y2=np.argsort(np.array(pos))  #[::-1]
+                                    
+                                    if len(position2) == len(pos):
+                                        flag1 = True
+                                        for k in range(len(pos)):
+                                            if pos[y2[k]] == position2[y1[k]]:
+                                                flag1 = flag1 and True
+                                                flag2.append(True)
+                                            else:
+                                                flag1 = flag1 and False
+                                                flag2.append(False)
+                                                # break
+                                            #end if
+                                        #next
+                                        # flag = flag1
+                                        if flag1 :
+                                            pos2 = pos
+                                            break
+                                    else:
+                                        for k in range(len(pos)):
+                                            flag2.append(False)
+                                        #next
+                                        # flag = False
+                                    #end if
+                                
+                                words = []
+                                for k in y1:
+                                    words.append(wordsPosiotion[j][k])
+                                #next
+                                k = -1
+                                for word in words:
+                                    k += 1
+                                    a = pos[y2[k]]
+                                    xxx0 = word[1]
+                                    yyy0 = word[3]
+                                    width3 = word[2]-word[1]
+                                    height3= word[4]-word[3]
+                                    ResultData2.append([a,[xxx0, yyy0, width3, height3],flag2[k]])
+                                #next
+
+                                # 　柱長さの検定
+                                datas = wordsPosiotion[j]
+                                length2 = datas[4]
+                                a = length2[0]
+                                xxx0 = length2[1]
+                                yyy0 = length2[3]
+                                width3 = length2[2]-length2[1]
+                                height3= length2[4]-length2[3]
+                                if a == length1:
+                                    ResultData2.append([length1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([length1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+
+
+                                pageFlag2 = True
+
+                            # elif j == LineNo3:    # 断面位置
+                            #     line = wordsInline[j]
+                            #     datas = wordsPosiotion[j]
+                            #     for data in datas:
+                            #         SectionPos.append(data[5])
+                            #     #next
+
+                            elif j == LineNo4:    # 断面寸法
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+                                sectionSize2 = datas[1]
+                                a = sectionSize2[0]
+                                xxx0 = sectionSize2[1]
+                                yyy0 = sectionSize2[3]
+                                width3 = sectionSize2[2]-sectionSize2[1]
+                                height3= sectionSize2[4]-sectionSize2[3]
+                                if a == sectionSize1:
+                                    ResultData2.append([sectionSize1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([sectionSize1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                                # XWireT2 = ""
+                                # YWireT2 = ""
+                                # Xstirrups2 =  ""
+                                # Ystirrups2 =  ""
+                                
+                                # XWireB2 = ""
+                                # YWireB2 = ""
+
+                            elif j == LineNo5:    # 主筋T
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+
+                                XWireT2 = datas[1]
+                                a = XWireT2[0]
+                                xxx0 = XWireT2[1]
+                                yyy0 = XWireT2[3]
+                                width3 = XWireT2[2]-XWireT2[1]
+                                height3= XWireT2[4]-XWireT2[3]
+                                if a == XWireT1:
+                                    ResultData2.append([XWireT1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([XWireT1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                                YWireT2 = datas[2]
+                                a = YWireT2[0]
+                                xxx0 = YWireT2[1]
+                                yyy0 = YWireT2[3]
+                                width3 = YWireT2[2]-YWireT2[1]
+                                height3= YWireT2[4]-YWireT2[3]
+                                if a == YWireT1:
+                                    ResultData2.append([YWireT1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([YWireT1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                            elif j == LineNo6:    # 主筋B
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+
+                                XWireB2 = datas[len(datas)-2]
+                                a = XWireB2[0]
+                                xxx0 = XWireB2[1]
+                                yyy0 = XWireB2[3]
+                                width3 = XWireB2[2]-XWireB2[1]
+                                height3= XWireB2[4]-XWireB2[3]
+                                if a == XWireB1:
+                                    ResultData2.append([XWireB1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([XWireB1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                                YWireB2 = datas[len(datas)-1]
+                                a = YWireB2[0]
+                                xxx0 = YWireB2[1]
+                                yyy0 = YWireB2[3]
+                                width3 = YWireB2[2]-YWireB2[1]
+                                height3= YWireB2[4]-YWireB2[3]
+                                if a == YWireB1:
+                                    ResultData2.append([YWireB1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([YWireB1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                            elif j == LineNo7:    # 帯筋
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+
+                                Xstirrups2 = datas[len(datas)-2]
+                                a = Xstirrups2[0]
+                                xxx0 = Xstirrups2[1]
+                                yyy0 = Xstirrups2[3]
+                                width3 = Xstirrups2[2]-Xstirrups2[1]
+                                height3= Xstirrups2[4]-Xstirrups2[3]
+                                if a == Xstirrups1:
+                                    ResultData2.append([Xstirrups1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([Xstirrups1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                                Ystirrups2 = datas[len(datas)-1]
+                                a = Ystirrups2[0]
+                                xxx0 = Ystirrups2[1]
+                                yyy0 = Ystirrups2[3]
+                                width3 = Ystirrups2[2]-Ystirrups2[1]
+                                height3= Ystirrups2[4]-Ystirrups2[3]
+                                if a == Ystirrups1:
+                                    ResultData2.append([Ystirrups1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([Ystirrups1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                            else:   
+                                a=0
+                            #end if
+                        #next
+                    #next
+                #end if
+            #end if
+
+
 
 
         #=================================================================================================

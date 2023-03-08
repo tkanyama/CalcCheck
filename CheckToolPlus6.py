@@ -1827,7 +1827,8 @@ class CheckTool():
 
     def makePattern(self):
         self.patternDic = {}
-        self.patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+','\d+C\d+','\d+P\d+']
+        # self.patternDic["符号名"]=['\S*\d+G\d+','B\d+','\S*RG\d+','\S*FG\d+','\d+C\d+','\d+P\d+']
+        self.patternDic["符号名"]=['\S*\d{1,2}G\d{1,2}','\S*RG\d{1,2}','\S*FG\d{1,2}','\d{1,2}C\d{1,2}','\d{1,2}P\d{1,2}']
         # self.patternDic["断面寸法"]=['\d+\S?\d+','\d+×\d+']
         self.patternDic["断面寸法"]=['\d+×\d+']
         self.patternDic["コンクリート"]=['\(Fc\d+\)']
