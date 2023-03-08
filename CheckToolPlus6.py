@@ -1833,7 +1833,8 @@ class CheckTool():
         self.patternDic["コンクリート"]=['\(Fc\d+\)']
         # self.patternDic["配筋"]=['\d+/\d+-D\d+','\d+-D\d+','\d+/\d+/\d+-D\d+']
         self.patternDic["あばら筋"]=['\d{1}-\w+\d{2}@\d+']
-        self.patternDic["配筋"]=['\d{1}/\d{1}-D\d{2}','\d{1}-D\d{2}','\d{1}/\d{1}/\d{1}-D\d{2}']
+        # self.patternDic["配筋"]=['\d{1}/\d{1}-D\d{2}','\d{1}-D\d{2}','\d{1}/\d{1}/\d{1}-D\d{2}']
+        self.patternDic["配筋"]=['\d{1,2}/\d{1,2}-D\d{2}','\d{1,2}-D\d{2}','\d{1,2}/\d{1,2}/\d{1,2}-D\d{2}']
         self.patternDic["かぶり"]=['\d+\.\d+/\d+\.\d+','\d+/\d+\.\d+','\d+/\d+','\d{2}']
         self.patternDic["材料"]=['SD\d+\w*','SPR\d+\w*']
         self.patternDic["層"]=['\d+FL\Z','RFL\Z']
@@ -3220,13 +3221,113 @@ class CheckTool():
                 if memberN>0:
                     for i in range(memberN):
                         name = MembarNames[i]
+                        print(name)
                         n = name.find("耐",0)
                         if n>0:
                             name = name[:n]
                         #end if
+
+                        # 断面リストからの情報を抽出
+
+                        upperWire1 = []     # 上端主筋（左端、中央、右端）
+                        lowerWire1 = []     # 下端主筋（左端、中央、右端）
+                        stirrups1 = ""      # あばら筋
+                        sectionSize1 = ""
+                        data1 = self.memberData[name]
+                        if "全断面" in data1:
+                            sectionSize1 = str(data1["全断面"]["断面寸法1"])
+                            stirrups1 =  str(data1["全断面"]["あばら筋1"])
+
+                            for k in range(3):
+                                upperWire1.append(str(data1["全断面"]["配筋1"]))
+                                lowerWire1.append(str(data1["全断面"]["配筋2"]))
+                            #next
+                        elif "端部" in data1:
+                            sectionSize1 = str(data1["端部"]["断面寸法1"])
+                            stirrups1 =  str(data1["端部"]["あばら筋1"])
+
+                            upperWire1.append(str(data1["端部"]["配筋1"]))
+                            lowerWire1.append(str(data1["端部"]["配筋2"]))
+
+                            upperWire1.append(str(data1["中央"]["配筋1"]))
+                            lowerWire1.append(str(data1["中央"]["配筋2"]))
+
+                            upperWire1.append(str(data1["端部"]["配筋1"]))
+                            lowerWire1.append(str(data1["端部"]["配筋2"]))
+
+                        elif "左端" in data1:
+                            sectionSize1 = str(data1["左端"]["断面寸法1"])
+                            stirrups1 =  str(data1["左端"]["あばら筋1"])
+                            upperWire1.append(str(data1["左端"]["配筋1"]))
+                            lowerWire1.append(str(data1["左端"]["配筋2"]))
+
+                            upperWire1.append(str(data1["中央"]["配筋1"]))
+                            lowerWire1.append(str(data1["中央"]["配筋2"]))
+
+                            upperWire1.append(str(data1["右端"]["配筋1"]))
+                            lowerWire1.append(str(data1["右端"]["配筋2"]))
+                        #end if
+                        Wires = []
+                        # upperWire1 = ["2/3/4-D25","4/4/4-D30","5/5/5-D51"]
+                        for wire in upperWire1:
+                            if "/" in wire:
+                                n1 = wire[:wire.find("-",0)]
+                                D = wire[wire.find("-",0)+1:]
+                                n2 = n1.split("/")
+                                wire2 = []
+                                for n in n2:
+                                    wire2.append(str(n) + "-" + D)
+                                #next
+                                Wires.append(wire2)
+                            else:
+                                Wires.append([wire])
+                        #next
+                        upperWire1 = Wires
+
+                        Wires = []
+                        # upperWire1 = ["2/3/4-D25","4/4/4-D30","5/5/5-D51"]
+                        for wire in lowerWire1:
+                            if "/" in wire:
+                                n1 = wire[:wire.find("-",0)]
+                                D = wire[wire.find("-",0)+1:]
+                                n2 = n1.split("/")
+                                wire2 = []
+                                for n in n2:
+                                    wire2.append(str(n) + "-" + D)
+                                #next
+                                Wires.append(wire2)
+                            else:
+                                Wires.append([wire])
+                        #next
+                        lowerWire1 = Wires
+                        
                         wordsPosiotion = []
                         wordsInline = []
+                        
+                        LineNo1 = 0
+                        LineNo2 = 1
+                        LineNo3 = 2
+                        LineNo4 = 3
+                        LineNo5 = 0
+                        LineNo6 = 0
+                        LineNo7 = 0
+                        k=-1
                         for j in range(stline[i],edline[i]):
+                            k += 1
+                            Line = str(CharLines2[j])
+                            print(Line)
+                            if Line.find("上端",0)>0:
+                                LineNo5 = k
+                            elif Line.find("下端",0)>0:
+                                LineNo6 = k
+                            elif Line.find("あばら",0)>0:
+                                LineNo7 = k
+                            #end if
+                        #next
+
+                        k = -1
+                        for j in range(stline[i],edline[i]):
+                            k += 1
                             CharLine = CharData2[j]
                             words = []
                             wordsP1 = []
@@ -3283,20 +3384,26 @@ class CheckTool():
                             #end if
                             wordsPosiotion.append(wordsP1)
                             wordsInline.append(words)
+                            
                         #next
-                        
+                        upperWire2 = []
+                        lowerWire2 = []
+                        wireName1 = [[],[],[]]
+                        wireName2 = [[],[],[]]
+                        SectionPos = []
+                        dx1 = 15
                         ln = len(wordsInline)
                         for j in range(ln):
-                            if j == 0:  # 符号名
+                            if j == LineNo1:  # 符号名
                                 name1 = wordsInline[j]
-                            elif j == 1:    # 位置
+                            elif j == LineNo2:    # 位置
                                 if name == "FG4A":
                                     a=0
                                 pos1 = []
                                 # pos2 = []
                                 if name in self.MemberPosition:    
-                                    data1 = self.MemberPosition[name]['図面情報']
-                                    for data in data1:
+                                    data2 = self.MemberPosition[name]['図面情報']
+                                    for data in data2:
                                         if len(data['位置'])>0 :
                                             pos1.append(data['位置'])
                                         #end if
@@ -3307,17 +3414,12 @@ class CheckTool():
                                     position2.append(item)
                                 #next
                                 y1=np.argsort(np.array(position2)) 
-                                # position2.sort()
-                                # y=np.argsort(np.array(position2))  #[::-1]
-                                # wordsPosiotion2 = []
-                                # for k in y:
-                                #     wordsPosiotion2.append(wordsPosiotion[k])
-                                # #next
-                                flag = False
+                                
+                                # flag = False
                                 flag2 = []
                                 y2 = []
                                 for pos in pos1:
-                                    flag = False
+                                    # flag = False
                                     y2=np.argsort(np.array(pos))  #[::-1]
                                     # pos.sort()
                                     flag2 = []
@@ -3334,7 +3436,7 @@ class CheckTool():
                                                 # break
                                             #end if
                                         #next
-                                        flag = flag1
+                                        # flag = flag1
                                         if flag1 :
                                             pos2 = pos
                                             break
@@ -3342,7 +3444,7 @@ class CheckTool():
                                         for k in range(len(pos)):
                                             flag2.append(False)
                                         #next
-                                        flag = False
+                                        # flag = False
                                     #end if
                                 
                                 words = []
@@ -3361,11 +3463,100 @@ class CheckTool():
                                             
                                 pageFlag2 = True
 
-                            elif j == 2:    # 断面位置
-                                a=0
-                            elif j == 3:    # 断面寸法
-                                a=0
-                            else:   # 以下、鉄筋の種類
+                            elif j == LineNo3:    # 断面位置
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+                                for data in datas:
+                                    SectionPos.append(data[5])
+                                #next
+
+                            elif j == LineNo4:    # 断面寸法
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+                                sectionSize2 = datas[1]
+                                a = sectionSize2[0]
+                                xxx0 = sectionSize2[1]
+                                yyy0 = sectionSize2[3]
+                                width3 = sectionSize2[2]-sectionSize2[1]
+                                height3= sectionSize2[4]-sectionSize2[3]
+                                if a == sectionSize1:
+                                    ResultData2.append([sectionSize1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([sectionSize1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+
+                            elif j >= LineNo5 and j < LineNo6:    # 上端鉄筋
+                                datas = wordsPosiotion[j]
+                                for data in datas:
+                                    for k in range(len(SectionPos)):
+                                        xm0 = SectionPos[k]
+                                        if data[5]>=xm0-dx1 and data[5]<=xm0+dx1:
+                                            wireName1[k].append(data)
+                                        #end if
+                                    #next
+                                #next
+                                if j == LineNo6 - 1:
+                                    for k in range(3):
+                                        for m in range(len(wireName1[k])):
+                                            a = wireName1[k][m][0]
+                                            xxx0 = wireName1[k][m][1]
+                                            yyy0 = wireName1[k][m][3]
+                                            width3 = wireName1[k][m][2]-wireName1[k][m][1]
+                                            height3= wireName1[k][m][4]-wireName1[k][m][3]
+                                            name01 = upperWire1[k][m]
+                                            name02 = wireName1[k][m][0]
+                                            if name01 == name02:
+                                                ResultData2.append([name01,[xxx0, yyy0, width3, height3],True])
+                                            else:
+                                                ResultData2.append([name01,[xxx0, yyy0, width3, height3],False])
+                                            #end if
+                                        #next
+                                    #next
+                                #end if
+
+
+                            elif j >= LineNo6 and j < LineNo7:    # 下端鉄筋
+                                datas = wordsPosiotion[j]
+                                for data in datas:
+                                    for k in range(len(SectionPos)):
+                                        xm0 = SectionPos[k]
+                                        if data[5]>=xm0-dx1 and data[5]<=xm0+dx1:
+                                            wireName2[k].append(data)
+                                        #end if
+                                    #next
+                                #next
+                                if j == LineNo7 - 1:
+                                    for k in range(3):
+                                        for m in range(len(wireName2[k])):
+                                            a = wireName2[k][m][0]
+                                            xxx0 = wireName2[k][m][1]
+                                            yyy0 = wireName2[k][m][3]
+                                            width3 = wireName2[k][m][2]-wireName2[k][m][1]
+                                            height3= wireName2[k][m][4]-wireName2[k][m][3]
+                                            name01 = lowerWire1[k][m]
+                                            name02 = wireName2[k][m][0]
+                                            if name01 == name02:
+                                                ResultData2.append([name01,[xxx0, yyy0, width3, height3],True])
+                                            else:
+                                                ResultData2.append([name01,[xxx0, yyy0, width3, height3],False])
+                                            #end if
+                                        #next
+                                    #next
+                            elif j == LineNo7:    # あばら筋
+                                line = wordsInline[j]
+                                datas = wordsPosiotion[j]
+                                stirrups2 = datas[1]
+                                a = stirrups2[0]
+                                xxx0 = stirrups2[1]
+                                yyy0 = stirrups2[3]
+                                width3 = stirrups2[2]-stirrups2[1]
+                                height3= stirrups2[4]-stirrups2[3]
+                                if a == stirrups1:
+                                    ResultData2.append([stirrups1,[xxx0, yyy0, width3, height3],True])
+                                else:
+                                    ResultData2.append([stirrups1,[xxx0, yyy0, width3, height3],False])
+                                #end if
+                            else:   # 部材長
                                 a=0
 
 
@@ -3936,6 +4127,7 @@ class CheckTool():
                 cc.drawString(20 * mm,  pageSizeY - 40 * mm, "検定比（{}以上）の検索結果".format(limit))
 
             else:   # ２ページ目以降は以下の処理
+                # 検定比が閾値を超えている箇所の描画
                 pn = len(ResultData)
                 if pn > 0:
                     # ページの左肩に検出個数を印字
@@ -3970,6 +4162,7 @@ class CheckTool():
                     #next
                 #end if
 
+                # 断面情報の検査結果の描画
                 pn2 = len(ResultData2)
                 if pn2 > 0:
                     # ページの左肩に検出個数を印字
@@ -4003,7 +4196,7 @@ class CheckTool():
                             cc.setFont(font_name, 5)
                             t2 = a
                             # t2 = " {:.2f}".format(a)
-                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3]/2.0, t2)
                         else:
                             cc.setFillColor("white", 0.5)
                             cc.setStrokeColorRGB(1.0, 0.0, 0.0)
@@ -4013,7 +4206,7 @@ class CheckTool():
                             cc.setFont(font_name, 5)
                             t2 = a
                             # t2 = " {:.2f}".format(a)
-                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3]/2.0, t2)
                         #end if
                     #next
                 #end if
@@ -4058,15 +4251,15 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    # stpage = 2
-    # edpage = 300
-    # limit = 0.95
-    # filename = "サンプル計算書(1).pdf"
-
     stpage = 2
-    edpage = 200
+    edpage = 300
     limit = 0.95
-    filename = "サンプル計算書(1)軸力図.pdf"
+    filename = "サンプル計算書(1).pdf"
+
+    # stpage = 2
+    # edpage = 0
+    # limit = 0.95
+    # filename = "サンプル計算書(1)軸力図.pdf"
 
     # stpage = 100
     # edpage = 0
