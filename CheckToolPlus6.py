@@ -3144,11 +3144,14 @@ class CheckTool():
                             #end if
                         #end if
                     #next
+                #end if
+            #end if
 
 
-# ***************************************************************************************
-#   検定表から断面情報を抽出する。
-
+            # ***************************************************************************************
+            #   検定表から断面情報を抽出する。
+            # ***************************************************************************************
+            
             if len(CharLines) > 0:
                 # Pdfの線情報から縦線のみを抽出
                 if len(LineDatas)>0:
@@ -3221,7 +3224,7 @@ class CheckTool():
                 if memberN>0:
                     for i in range(memberN):
                         name = MembarNames[i]
-                        print(name)
+                        # print(name)
                         n = name.find("耐",0)
                         if n>0:
                             name = name[:n]
@@ -3315,7 +3318,7 @@ class CheckTool():
                         for j in range(stline[i],edline[i]):
                             k += 1
                             Line = str(CharLines2[j])
-                            print(Line)
+                            # print(Line)
                             if Line.find("上端",0)>0:
                                 LineNo5 = k
                             elif Line.find("下端",0)>0:
@@ -3558,37 +3561,10 @@ class CheckTool():
                                 #end if
                             else:   # 部材長
                                 a=0
-
-
-                        if name in self.memberData:
-                            data1 = self.memberData[name]
-                        if name in self.MemberPosition:    
-                            pos1 = self.MemberPosition[name]
-                        a=1
-
-
-
-                    # if name in dic1:
-                        # dic1 = self.memberData[name]
-                        # keys1 = list(dic1.keys())
-                        # for key1 in keys1:
-                        #     keys2 = list(dic1[key1].keys())
-                        #     for key2 in keys2:
-                        #         print("符号名={} : key1={} : key2={} : {}".format(name,key1,key2,dic1[key1][key2]))
-                        
-                        # dic2 = self.MemberPosition[name]
-                        # keys1 = list(dic2.keys())
-                        # for key1 in keys1:
-                        #     datas = dic2[key1]
-                        #     for data in datas:
-                        #         keys2 = list(data.keys())
-                        #         for key2 in keys2:
-                        #             print(key1,key2,data[key2])
-                        # # print(dic1)
-
-                    # a=0
-
-            #end if
+                            #end if
+                        #next
+                    #next
+                #end if
             #end if
                                 
         #=================================================================================================
@@ -4095,142 +4071,142 @@ class CheckTool():
         #
         #============================================================================================
         
-        # try:
-        in_path = pdf_file
-        out_path = pdf_out_file
+        try:
+            in_path = pdf_file
+            out_path = pdf_out_file
 
-        # 保存先PDFデータを作成
-        cc = canvas.Canvas(out_path)
-        cc.setLineWidth(1)
-        # PDFを読み込む
-        pdf = PdfReader(in_path, decompress=False)
+            # 保存先PDFデータを作成
+            cc = canvas.Canvas(out_path)
+            cc.setLineWidth(1)
+            # PDFを読み込む
+            pdf = PdfReader(in_path, decompress=False)
 
-        self.memberData = {}
-        self.memberName = []
-        i = 0
-        for pageI in range(len(pageNo)):
-            pageN = pageNo[pageI]
-            pageSizeX = float(PaperSize[pageN-1][0])
-            pageSizeY = float(PaperSize[pageN-1][1])
-            page = pdf.pages[pageN - 1]
-            ResultData = pageResultData[pageI]
-            ResultData2 = pageResultData2[pageI]
-            # PDFデータへのページデータの展開
-            pp = pagexobj(page) #ページデータをXobjへの変換
-            rl_obj = makerl(cc, pp) # ReportLabオブジェクトへの変換  
-            cc.doForm(rl_obj) # 展開
+            self.memberData = {}
+            self.memberName = []
+            i = 0
+            for pageI in range(len(pageNo)):
+                pageN = pageNo[pageI]
+                pageSizeX = float(PaperSize[pageN-1][0])
+                pageSizeY = float(PaperSize[pageN-1][1])
+                page = pdf.pages[pageN - 1]
+                ResultData = pageResultData[pageI]
+                ResultData2 = pageResultData2[pageI]
+                # PDFデータへのページデータの展開
+                pp = pagexobj(page) #ページデータをXobjへの変換
+                rl_obj = makerl(cc, pp) # ReportLabオブジェクトへの変換  
+                cc.doForm(rl_obj) # 展開
 
-            if pageN == 1:  # 表紙に「"検定比（0.##以上）の検索結果」の文字を印字
-                cc.setFillColor("red")
-                font_name = "ipaexg"
-                cc.setFont(font_name, 20)
-                cc.drawString(20 * mm,  pageSizeY - 40 * mm, "検定比（{}以上）の検索結果".format(limit))
-
-            else:   # ２ページ目以降は以下の処理
-                # 検定比が閾値を超えている箇所の描画
-                pn = len(ResultData)
-                if pn > 0:
-                    # ページの左肩に検出個数を印字
+                if pageN == 1:  # 表紙に「"検定比（0.##以上）の検索結果」の文字を印字
                     cc.setFillColor("red")
                     font_name = "ipaexg"
-                    cc.setFont(font_name, 12)
-                    t2 = "検索個数 = {}".format(pn)
-                    cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
+                    cc.setFont(font_name, 20)
+                    cc.drawString(20 * mm,  pageSizeY - 40 * mm, "検定比（{}以上）の検索結果".format(limit))
 
-                    # 該当する座標に四角形を描画
-                    for R1 in ResultData:
-                        a = R1[0]
-                        origin = R1[1]
-                        flag = R1[2]
-                        x0 = origin[0]
-                        y0 = origin[1]
-                        width = origin[2]
-                        height = origin[3]
-
-                        # 長方形の描画
-                        cc.setFillColor("white", 0.5)
-                        cc.setStrokeColorRGB(1.0, 0, 0)
-                        cc.rect(x0, y0, width, height, fill=0)
-
-                        if flag:    # "壁の検定表"の場合は、四角形の右肩に数値を印字
-                            cc.setFillColor("red")
-                            font_name = "ipaexg"
-                            cc.setFont(font_name, 7)
-                            t2 = " {:.2f}".format(a)
-                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
-                        #end if
-                    #next
-                #end if
-
-                # 断面情報の検査結果の描画
-                pn2 = len(ResultData2)
-                if pn2 > 0:
-                    # ページの左肩に検出個数を印字
+                else:   # ２ページ目以降は以下の処理
+                    # 検定比が閾値を超えている箇所の描画
+                    pn = len(ResultData)
                     if pn > 0:
+                        # ページの左肩に検出個数を印字
                         cc.setFillColor("red")
-                    else:
-                        cc.setFillColor("green")
+                        font_name = "ipaexg"
+                        cc.setFont(font_name, 12)
+                        t2 = "検索個数 = {}".format(pn)
+                        cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
+
+                        # 該当する座標に四角形を描画
+                        for R1 in ResultData:
+                            a = R1[0]
+                            origin = R1[1]
+                            flag = R1[2]
+                            x0 = origin[0]
+                            y0 = origin[1]
+                            width = origin[2]
+                            height = origin[3]
+
+                            # 長方形の描画
+                            cc.setFillColor("white", 0.5)
+                            cc.setStrokeColorRGB(1.0, 0, 0)
+                            cc.rect(x0, y0, width, height, fill=0)
+
+                            if flag:    # "壁の検定表"の場合は、四角形の右肩に数値を印字
+                                cc.setFillColor("red")
+                                font_name = "ipaexg"
+                                cc.setFont(font_name, 7)
+                                t2 = " {:.2f}".format(a)
+                                cc.drawString(origin[0]+origin[2], origin[1]+origin[3], t2)
+                            #end if
+                        #next
                     #end if
-                    font_name = "ipaexg"
-                    cc.setFont(font_name, 12)
-                    t2 = "検索個数 = {}".format(pn)
-                    cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
 
-                    # 該当する座標に四角形を描画
-                    for R1 in ResultData2:
-                        a = R1[0]
-                        origin = R1[1]
-                        flag = R1[2]
-                        x0 = origin[0]
-                        y0 = origin[1]
-                        width = origin[2]
-                        height = origin[3]
-
-                        # 長方形の描画
-                        if flag:    # 一致する場合
-                            cc.setFillColor("white", 0.5)
-                            cc.setStrokeColorRGB(0.0, 1.0, 0.0)
-                            cc.rect(x0, y0, width, height, fill=0)
-                            cc.setFillColor("green")
-                            font_name = "ipaexg"
-                            cc.setFont(font_name, 5)
-                            t2 = a
-                            # t2 = " {:.2f}".format(a)
-                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3]/2.0, t2)
-                        else:
-                            cc.setFillColor("white", 0.5)
-                            cc.setStrokeColorRGB(1.0, 0.0, 0.0)
-                            cc.rect(x0, y0, width, height, fill=0)
+                    # 断面情報の検査結果の描画
+                    pn2 = len(ResultData2)
+                    if pn2 > 0:
+                        # ページの左肩に検出個数を印字
+                        if pn > 0:
                             cc.setFillColor("red")
-                            font_name = "ipaexg"
-                            cc.setFont(font_name, 5)
-                            t2 = a
-                            # t2 = " {:.2f}".format(a)
-                            cc.drawString(origin[0]+origin[2], origin[1]+origin[3]/2.0, t2)
+                        else:
+                            cc.setFillColor("green")
                         #end if
-                    #next
+                        font_name = "ipaexg"
+                        cc.setFont(font_name, 12)
+                        t2 = "検索個数 = {}".format(pn)
+                        cc.drawString(20 * mm,  pageSizeY - 15 * mm, t2)
+
+                        # 該当する座標に四角形を描画
+                        for R1 in ResultData2:
+                            a = R1[0]
+                            origin = R1[1]
+                            flag = R1[2]
+                            x0 = origin[0]
+                            y0 = origin[1]
+                            width = origin[2]
+                            height = origin[3]
+
+                            # 長方形の描画
+                            if flag:    # 一致する場合
+                                cc.setFillColor("white", 0.5)
+                                cc.setStrokeColorRGB(0.0, 1.0, 0.0)
+                                cc.rect(x0, y0, width, height, fill=0)
+                                cc.setFillColor("green")
+                                font_name = "ipaexg"
+                                cc.setFont(font_name, 5)
+                                t2 = a
+                                # t2 = " {:.2f}".format(a)
+                                cc.drawString(origin[0]+origin[2]+1.0, origin[1]+origin[3]/2.0, t2)
+                            else:
+                                cc.setFillColor("white", 0.5)
+                                cc.setStrokeColorRGB(1.0, 0.0, 0.0)
+                                cc.rect(x0, y0, width, height, fill=0)
+                                cc.setFillColor("red")
+                                font_name = "ipaexg"
+                                cc.setFont(font_name, 5)
+                                t2 = a
+                                # t2 = " {:.2f}".format(a)
+                                cc.drawString(origin[0]+origin[2]+1.0, origin[1]+origin[3]/2.0, t2)
+                            #end if
+                        #next
+                    #end if
+
                 #end if
 
-            #end if
+                # ページデータの確定
+                cc.showPage()
+            # next
 
-            # ページデータの確定
-            cc.showPage()
-        # next
-
-        # PDFの保存
-        cc.save()
+            # PDFの保存
+            cc.save()
 
             # time.sleep(1.0)
             # # すべての処理がエラーなく終了したのでTrueを返す。
             # return True
 
-        # except OSError as e:
-        #     print(e)
-        #     logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-        #     return False
-        # except:
-        #     logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
-        #     return False
+        except OSError as e:
+            print(e)
+            logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
+            return False
+        except:
+            logging.exception(sys.exc_info())#エラーをlog.txtに書き込む
+            return False
 
         #end try
 
@@ -4251,15 +4227,15 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    stpage = 2
-    edpage = 300
-    limit = 0.95
-    filename = "サンプル計算書(1).pdf"
-
     # stpage = 2
-    # edpage = 0
+    # edpage = 300
     # limit = 0.95
-    # filename = "サンプル計算書(1)軸力図.pdf"
+    # filename = "サンプル計算書(1).pdf"
+
+    stpage = 2
+    edpage = 0
+    limit = 0.95
+    filename = "サンプル計算書(1)軸力図.pdf"
 
     # stpage = 100
     # edpage = 0
