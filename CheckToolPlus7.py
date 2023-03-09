@@ -4672,6 +4672,8 @@ if __name__ == '__main__':
     # limit = 0.95
     # filename = "サンプル計算書(1).pdf"
 
+
+    
     stpage = 2
     edpage = 0
     limit = 0.95
