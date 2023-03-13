@@ -280,8 +280,9 @@ def RunCheck():
                                     AddLog(message)
                                 #end if
                             #end if
+
                         #next
-                                    
+                        folderName = ""            
                     else:
                         ErrorMessage += folderName + "にPDFファイルがありません\n"
                         ErrorFlag = True
@@ -329,7 +330,8 @@ def main():
     global time_sta
     global flag1, fname, dir1, dir2, dir3, dir4, dir5, folderName, paraFileName
     global ErrorFlag, ErrorMessage, runLogFile, systemLogFile
-    
+    global kind, verion
+
     if CreateFolfer():
         los_file = dir3 + "/" + systemLogFile
         # log 出力レベルの設定
@@ -380,24 +382,29 @@ def main():
         ErrorFlag = False
         ErrorMessage = ""
         # i = 0
-        folderName1 = ""
         kind = ""
         version = ""
+        count = 0
         while flag1:
             root.update()
+            count += 1
             # now_h=datetime.now().hour
             # now_s=datetime.now().second
             # now_m=datetime.now().minute
             # now_time=str(now_h)+":"+str(now_m)+":"+str(now_s)
-            if folderName != folderName1:
+            # if folderName != folderName1:
+            if count % 5 == 0 :
                 if os.path.isfile('./kind.txt'):
                     with open('./kind.txt') as f:
                         kind = f.readline()
                         version = f.readline()
                         f.close()
+                        # root.update()
                     #end with
                 #end if
-                folderName1 = folderName
+            #end if
+            # folderName1 = folderName
+            # flag2 = False
             #end if
 
             t1 = '\nフォルダー名：' + folderName + '\nファイル名：' + fname

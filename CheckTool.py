@@ -1343,13 +1343,14 @@ class CheckTool():
                 interpreter = PDFPageInterpreter(resourceManager, device)
                 interpreter2 = PDFPageInterpreter(resourceManager, device2)
                 pageI = 0
-                        
+                
                 for page in PDFPage.get_pages(fp):
                     pageI += 1
 
                     ResultData = []
                     print("page={}:".format(pageI), end="")
                     if pageI == 1 :
+                        # flag1 = True
                         pageFlag = True
                         kind, version = self.CoverCheck(page, interpreter2, device2)
                         print()
@@ -1399,6 +1400,8 @@ class CheckTool():
                 #next
 
                 fp.close()
+                folderName = ""
+                os.remove("./kind.txt")
             # end with
 
         except OSError as e:
