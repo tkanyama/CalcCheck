@@ -819,6 +819,8 @@ class CheckTool():
                                     # kmodeの時には「検定比」の下にある数値だけを検出する。
                                     if char[1]>=zx0 :
                                         t4 += char[0]
+                                        
+                                t4 = t4.replace(fword,"") 
                                 if t4 == "": # 
                                     kmode = False
                                 else:
@@ -943,7 +945,7 @@ class CheckTool():
                                     fword = fword3
                                 #end i
                                 # fwordより右側にある数値だけを検出するためのX座標を取得
-                                n = t3.index(fword) + len(fword)-1
+                                n = t3.index(fword)  # + len(fword)
                                 c1 = CharData[i][n]
                                 zx0 = c1[1]
                             #end if
@@ -955,6 +957,8 @@ class CheckTool():
                                 # kfwordより右側にある数値だけを検出する。
                                 if char[1]>=zx0 :
                                     t4 += char[0]
+
+                            t4 = t4.replace(fword,"") 
                             #next
                             if t4 == "": # 
                                 kmode = False
