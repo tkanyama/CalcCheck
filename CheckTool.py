@@ -1,11 +1,11 @@
 
 
 #==========================================================================================
-#   構造計算書の数値検査プログラムのサブルーチン（ver.0.01）
+#   構造計算書の数値検査プログラムのサブルーチン（ver.0.02）
 #
 #           一般財団法人日本建築総合試験所
 #
-#               coded by T.Kanyama  2023/02
+#               coded by T.Kanyama  2023/04
 #
 #==========================================================================================
 """
@@ -454,55 +454,86 @@ class CheckTool():
         xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
 
         mode = ""
+        texts = ""
         for lt in layout:
-            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎) 仕口 継手 付着
             if isinstance(lt, LTTextContainer):
-                texts = lt.get_text()
-                if "柱の断面検定表"in texts :
-                    柱_Flag = True
-                    break
-                #end if
-                if  "梁の断面検定表"in texts:
-                    梁_Flag = True
-                    break
-                #end if
-                if "壁の断面検定表"in texts :                               
-                    壁_Flag = True
-                    break
-                #end if
-                if "断面算定表"in texts and "杭基礎"in texts:
-                    杭_Flag = True
-                    break
-                #end if
-                if "ブレースの断面検定表"in texts :
-                    ブレース_Flag = True
-                    break
-                #end if
-                if "検定比図"in texts:
-                    検定比図_Flag = True
-                    break
-                #end if
+                texts += lt.get_text()
             #end if
         #next
+
         
-        if 壁_Flag:
-            i=0
-            for lt in layout:
-                # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
-                if isinstance(lt, LTTextContainer):
-                    texts = lt.get_text()
-                    if "ブレースの断面検定表"in texts :
-                        ブレース_Flag = True
-                        壁_Flag = False
-                        break
-                    #end if
-                #enf if
-                i += 1
-                if i>20:
-                    break
-                #end if
-            #next
+        if "柱の断面検定表"in texts :
+            柱_Flag = True
+        elif "梁の断面検定表"in texts:
+            梁_Flag = True
+        elif "壁の断面検定表"in texts :                               
+            壁_Flag = True
+        elif "ブレースの断面検定表"in texts :
+            ブレース_Flag = True
+        elif "検定比図"in texts:
+            検定比図_Flag = True
+        elif "断面算定表"in texts and "杭基礎"in texts:
+            杭_Flag = True
         #end if
+        
+
+        # for lt in layout:
+        #     # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+        #     if isinstance(lt, LTTextContainer):
+        #         texts = lt.get_text()
+        #         if "柱の断面検定表"in texts :
+        #             柱_Flag = True
+        #             break
+        #         #end if
+        #         if  "梁の断面検定表"in texts:
+        #             梁_Flag = True
+        #             break
+        #         #end if
+        #         if "壁の断面検定表"in texts :                               
+        #             壁_Flag = True
+        #             break
+        #         #end if
+        #         if "断面算定表"in texts and "杭基礎"in texts:
+        #             杭_Flag = True
+        #             break
+        #         #end if
+        #         if "ブレースの断面検定表"in texts :
+        #             ブレース_Flag = True
+        #             break
+        #         #end if
+        #         if "検定比図"in texts:
+        #             検定比図_Flag = True
+        #             break
+        #         #end if
+        #     #end if
+        # #next
+
+        if 壁_Flag:            
+            if "ブレースの断面検定表"in texts :
+                ブレース_Flag = True
+                壁_Flag = False
+            #end if            
+        #end if  
+            
+        # if 壁_Flag:
+        #     i=0
+        #     for lt in layout:
+        #         # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+        #         if isinstance(lt, LTTextContainer):
+        #             texts = lt.get_text()
+        #             if "ブレースの断面検定表"in texts :
+        #                 ブレース_Flag = True
+        #                 壁_Flag = False
+        #                 break
+        #             #end if
+        #         #enf if
+        #         i += 1
+        #         if i>20:
+        #             break
+        #         #end if
+        #     #next
+        # #end if
             
         if 検定比図_Flag:
             mode = "検定比図"
@@ -526,24 +557,33 @@ class CheckTool():
 
         i = 0
         B_kind = ""
-        for lt in layout:
-            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
-            if isinstance(lt, LTTextContainer):
-                texts = lt.get_text()
-                if "RC柱"in texts or "RC梁"in texts:
-                    B_kind = "RC造"
-                    break
-                #end if
-                if "SRC柱"in texts or "SRC梁"in texts:
-                    B_kind = "SRC造"
-                    break
-                #end if
-                if "S柱"in texts or "S梁"in texts:
-                    B_kind = "S造"
-                    break
-                #end if
-            #end if
+            
+        if "RC柱"in texts or "RC梁"in texts:
+            B_kind = "RC造"
+        elif "SRC柱"in texts or "SRC梁"in texts:
+            B_kind = "SRC造"
+        elif "S柱"in texts or "S梁"in texts:
+            B_kind = "S造"
+        #end if
         #next
+        # for lt in layout:
+        #     # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+        #     if isinstance(lt, LTTextContainer):
+        #         texts = lt.get_text()
+        #         if "RC柱"in texts or "RC梁"in texts:
+        #             B_kind = "RC造"
+        #             break
+        #         #end if
+        #         if "SRC柱"in texts or "SRC梁"in texts:
+        #             B_kind = "SRC造"
+        #             break
+        #         #end if
+        #         if "S柱"in texts or "S梁"in texts:
+        #             B_kind = "S造"
+        #             break
+        #         #end if
+        #     #end if
+        # #next
 
         if mode == "" :     # 該当しない場合はこのページの処理は飛ばす。
             print("No Data")
@@ -745,12 +785,24 @@ class CheckTool():
                     # lines =t1.splitlines()
                     i = -1
                     kmode = False
-                    fword = "σc/fc"
+                    # fword = "σc/fc"
+                    fword1 = "σc/fc"
+                    fword2 = "σ/fc"
+                    fword3 = "σ/f"
                     for line in CharLines:
                         i += 1
                         t3 = line[0]
                         if not kmode :
-                            if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
+                            # if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
+                            if fword1 in t3 or fword2 in t3 or fword3 in t3 : # 最初のfwordが現れたら「kmode」をTrue
+                                kmode = True
+                                if fword1 in t3:
+                                    fword = fword1
+                                elif fword2 in t3:
+                                    fword = fword2
+                                elif fword3 in t3:
+                                    fword = fword3
+                                #end i
                                 kmode = True
                                 # fwordより右側にある数値だけを検出するためのX座標を取得
                                 n = t3.index(fword)
@@ -874,13 +926,22 @@ class CheckTool():
                     # lines =t1.splitlines()
                     i = -1
                     kmode = False
-                    fword = "σb/fb"
+                    fword1 = "σb/fb"
+                    fword2 = "σ/fb"
+                    fword3 = "σ/f"
                     for line in CharLines:
                         i += 1
                         t3 = line[0]
                         if not kmode :
-                            if fword in t3 : # 最初のfwordが現れたら「kmode」をTrue
+                            if fword1 in t3 or fword2 in t3 or fword3 in t3 : # 最初のfwordが現れたら「kmode」をTrue
                                 kmode = True
+                                if fword1 in t3:
+                                    fword = fword1
+                                elif fword2 in t3:
+                                    fword = fword2
+                                elif fword3 in t3:
+                                    fword = fword3
+                                #end i
                                 # fwordより右側にある数値だけを検出するためのX座標を取得
                                 n = t3.index(fword) + len(fword)-1
                                 c1 = CharData[i][n]
@@ -1161,15 +1222,40 @@ class CheckTool():
         xd = 3      #  X座標の左右に加える余白のサイズ（ポイント）を設定
 
         mode = ""
+        texts = ""
         for lt in layout:
-            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎)
+            # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎) 仕口 継手 付着
             if isinstance(lt, LTTextContainer):
-                texts = lt.get_text()
-                if "断面検定表"in texts or "検定比図" in texts :
-                    検定比_Flag = True
-                    break
+                texts += lt.get_text()
             #end if
         #next
+        if "柱の断面検定表"in texts or "梁の断面検定表"in texts or "ブレースの断面検定表"in texts or "壁の断面検定表"in texts  or "検定比図" in texts : 
+            検定比_Flag = True
+        
+        # if 検定比_Flag:
+        #     if "仕口" in texts or "継手" in texts or "付着" in texts:
+        #         検定比_Flag = False
+        #end if
+        # for lt in layout:
+        #     # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎) 仕口 継手 付着
+        #     if isinstance(lt, LTTextContainer):
+        #         texts = lt.get_text()
+        #         if "断面検定表"in texts or "検定比図" in texts : 
+        #             検定比_Flag = True
+        #             break                   
+        #     #end if
+        # #next
+        # if 検定比_Flag:
+        #     for lt in layout:
+        #         # LTTextContainerの場合だけ標準出力　断面算定表(杭基礎) 仕口 継手 付着
+        #         if isinstance(lt, LTTextContainer):
+        #             texts = lt.get_text()
+        #             if "仕口" in texts or "継手" in texts or "付着" in texts:
+        #                 検定比_Flag = False
+        #                 break
+        #         #end if
+        #     #next
+        # #end if
 
         if not 検定比_Flag  :     # 該当しない場合はこのページの処理は飛ばす。
             print("No Data")
@@ -1525,10 +1611,11 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    stpage = 173
-    edpage = 200
-    limit = 0.70
-    filename = "サンプル計算書(1).pdf"
+    stpage = 1
+    edpage = 0
+    limit = 0.90
+    filename = "SS7構造計算書（抜粋）.pdf"
+    # filename = "SS7構造計算書（抜粋）のコピー.pdf"
 
     # stpage = 100
     # edpage = 0
