@@ -455,7 +455,7 @@ def main():
                 #end while
             #end if
 
-            messagebox.showerror('エラー', ErrorMessage)
+            # messagebox.showerror('エラー', ErrorMessage)
         #end if
                         
     else:
