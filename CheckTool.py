@@ -420,6 +420,63 @@ class CheckTool():
     #end def
     #*********************************************************************************
 
+    #==================================================================================
+    #   修正
+    #==================================================================================
+
+    def MakeChar2(self, page, interpreter, device):
+
+        interpreter.process_page(page)
+        # １文字ずつのレイアウトデータを取得
+        layout = device.get_result()
+
+        CharData = []
+        for lt in layout:
+            if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
+                char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
+                m1 = lt.matrix
+                if m1[1] == 0.0 :  # 回転していない文字のみを抽出
+                    CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                #end if
+            #end if
+        #next
+
+        # n = len(CharData)
+        # text1 = ""
+        y1=CharData[0][3]
+        cdata = []
+        cline=[]
+        tline = ""
+        tbox = []
+        for c in CharData:
+            y=c[3]
+            if y == y1:
+                cline.append(c)
+                tline += c[0]
+            else:
+                cdata.append(cline)
+                tbox.append([tline])
+                # text1 += tline + "\n"
+                y1=c[3]
+                cline=[]
+                tline = ""
+                cline.append(c)
+                tline += c[0]
+            #end if
+        #next
+        if tline != "":
+            cdata.append(cline)
+            tbox.append([tline])
+            # text1 += tline + "\n"
+        #end if
+        # print(text1)
+        t1 = tbox
+        CharData5 = cdata
+        
+
+        return t1 , CharData5
+    #end def
+    #*********************************************************************************
 
     #==================================================================================
     #   各ページの数値を検索し、閾値を超える数値を四角で囲んだPDFファイルを作成する関数
@@ -561,7 +618,7 @@ class CheckTool():
         
         if mode == "検定比図" :
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData = self.MakeChar2(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
@@ -588,27 +645,32 @@ class CheckTool():
 
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
-                            t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
+                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","")     # 「検定比」と数値が一緒の場合は除去
                             nn = t3.find(t6,st)   # 数値の文字位置を検索
                             ln = len(t6)
 
                             # カッコがある場合は左右１文字ずつ追加
                             if "(" in t5:
-                                xn = 1
+                                xn1 = 1
+                                xn2 = 1
+                            elif "C" in t5 or "T" in t5:
+                                xn1 = 0
+                                xn2 = 1
                             else:
-                                xn = 0
+                                xn1 = 0
+                                xn2 = 0
 
                             if isfloat(t6):
                                 a = float(t6)
                                 if a>=limit1 and a<1.0:
                                     # 数値がlimit以上の場合はデータに登録
-                                    xxx0 = CharLine[nn-xn][1]
-                                    xxx1 = CharLine[nn+ln+xn-1][2]
+                                    xxx0 = CharLine[nn-xn1][1]
+                                    xxx1 = CharLine[nn+ln+xn2-1][2]
                                     if CharLine[nn][5][1] > 0.0:
                                         yyy0 = CharLine[nn][3] - 1.0
-                                        yyy1 = CharLine[nn+ln+xn-1][4] + 1.0
+                                        yyy1 = CharLine[nn+ln+xn1-1][4] + 1.0
                                     elif CharLine[nn][5][1] < 0.0:
-                                        yyy0 = CharLine[nn+ln+xn-1][3] - 2.0
+                                        yyy0 = CharLine[nn+ln+xn1-1][3] - 2.0
                                         yyy1 = CharLine[nn][4] + 2.0
                                     else:
                                         yyy0 = CharLine[nn][3]
@@ -1203,8 +1265,8 @@ class CheckTool():
         if not 検定比_Flag  :     # 該当しない場合はこのページの処理は飛ばす。
             print("No Data")
             return False,[]
-        # else:
-        #     print(mode)
+        else:
+            print("")
         #end if
 
         #=================================================================================================
@@ -1213,7 +1275,7 @@ class CheckTool():
         
         if 検定比_Flag  :
 
-            CharLines , CharData = self.MakeChar(page, interpreter2,device2)
+            CharLines , CharData = self.MakeChar2(page, interpreter2,device2)
 
             if len(CharLines) > 0:
                 i = -1
@@ -1244,27 +1306,32 @@ class CheckTool():
                     t4 = items
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
-                            t6 = t5.replace("(","").replace(")","").replace(" ","")    # 「検定比」と数値が一緒の場合は除去
+                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","")     # 「検定比」と数値が一緒の場合は除去
                             nn = t3.find(t6,st)   # 数値の文字位置を検索
                             ln = len(t6)
 
                             # カッコがある場合は左右１文字ずつ追加
                             if "(" in t5:
-                                xn = 1
+                                xn1 = 1
+                                xn2 = 1
+                            elif "C" in t5 or "T" in t5:
+                                xn1 = 0
+                                xn2 = 1
                             else:
-                                xn = 0
+                                xn1 = 0
+                                xn2 = 0
 
                             if isfloat(t6):
                                 a = float(t6)
                                 if a>=limit1 and a<1.0:
                                     # 数値がlimit以上の場合はデータに登録
-                                    xxx0 = CharLine[nn-xn][1]
-                                    xxx1 = CharLine[nn+ln+xn-1][2]
+                                    xxx0 = CharLine[nn-xn1][1]
+                                    xxx1 = CharLine[nn+ln+xn2-1][2]
                                     if CharLine[nn][5][1] > 0.0:
                                         yyy0 = CharLine[nn][3] - 1.0
-                                        yyy1 = CharLine[nn+ln+xn-1][4] + 1.0
+                                        yyy1 = CharLine[nn+ln+xn1-1][4] + 1.0
                                     elif CharLine[nn][5][1] < 0.0:
-                                        yyy0 = CharLine[nn+ln+xn-1][3] - 2.0
+                                        yyy0 = CharLine[nn+ln+xn1-1][3] - 2.0
                                         yyy1 = CharLine[nn][4] + 2.0
                                     else:
                                         yyy0 = CharLine[nn][3]
@@ -1284,6 +1351,7 @@ class CheckTool():
                                     print('val={:.2f}'.format(val))
                                 #end if
                             #end if
+
 
                             # 数値を検索を開始するを文字数分移動
                             st = nn + ln
@@ -1557,13 +1625,19 @@ if __name__ == '__main__':
     stpage = 1
     edpage = 0
     limit = 0.90
-    filename = "SS7構造計算書（抜粋）.pdf"
-    # filename = "SS7構造計算書（抜粋）のコピー.pdf"
+    # filename = "03 【東大阪】 構造計算書（住棟）のコピー2.pdf"
+    filename = "03 【東大阪】 構造計算書（住棟）.pdf"
+    # filename = "SS7構造計算書（抜粋）.pdf"
 
     # stpage = 100
     # edpage = 0
     # limit = 0.70
     # filename = "サンプル計算書(1)a.pdf"
+
+    # stpage = 1
+    # edpage = 0
+    # limit = 0.90
+    # filename = "SS7構造計算書（抜粋）のコピー.pdf"
 
     # stpage = 100
     # edpage = 0
