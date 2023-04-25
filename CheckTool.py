@@ -40,6 +40,7 @@ import os,time
 import sys
 import numpy as np
 import logging
+import re
 
 kind = ""
 version = ""
@@ -1339,15 +1340,15 @@ class CheckTool():
                     t4 = items
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
-                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","")     # 「検定比」と数値が一緒の場合は除去
+                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","").replace("組","")     # 「検定比」と数値が一緒の場合は除去
                             nn = t3.find(t6,st)   # 数値の文字位置を検索
                             ln = len(t6)
-
+                            
                             # カッコがある場合は左右１文字ずつ追加
                             if "(" in t5:
                                 xn1 = 1
                                 xn2 = 1
-                            elif "C" in t5 or "T" in t5:
+                            elif "C" in t5 or "T" in t5 or "組" in t5:
                                 xn1 = 0
                                 xn2 = 1
                             else:
