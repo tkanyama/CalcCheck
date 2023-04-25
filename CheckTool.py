@@ -431,12 +431,15 @@ class CheckTool():
         layout = device.get_result()
 
         CharData = []
+        CharData2 = []
         for lt in layout:
             if isinstance(lt, LTChar):  # レイアウトデータうち、LTCharのみを取得
                 char1 = lt.get_text()   # レイアウトデータに含まれる全文字を取得
                 m1 = lt.matrix
                 if m1[1] == 0.0 :  # 回転していない文字のみを抽出
                     CharData.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
+                else:
+                    CharData2.append([char1, lt.x0, lt.x1, lt.y0, lt.y1,lt.matrix])
                 #end if
             #end if
         #next
@@ -469,6 +472,36 @@ class CheckTool():
             tbox.append([tline])
             # text1 += tline + "\n"
         #end if
+
+        cline=[]
+        tline = ""
+        flag = False
+        for c in CharData2:
+            if flag == False:
+                if c[0] != " ":
+                    cline.append(c)
+                    tline += c[0]
+                    flag = True
+                #end if
+            else:
+                if c[0] != " ":
+                    cline.append(c)
+                    tline += c[0]
+                    flag = True
+                else:
+                    cdata.append(cline)
+                    tbox.append([tline])
+                    cline=[]
+                    tline = ""
+                    flag = False
+                #end if
+            #end if
+        #next
+        if tline != "":
+            cdata.append(cline)
+            tbox.append([tline])
+        #end if
+
         # print(text1)
         t1 = tbox
         CharData5 = cdata
@@ -645,7 +678,7 @@ class CheckTool():
 
                     if len(t4)>0:    # 文字列配列が１個以上ある場合に処理
                         for t5 in t4:
-                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","")     # 「検定比」と数値が一緒の場合は除去
+                            t6 = t5.replace("(","").replace(")","").replace(" ","").replace("C","").replace("T","").replace("組","")     # 「検定比」と数値が一緒の場合は除去
                             nn = t3.find(t6,st)   # 数値の文字位置を検索
                             ln = len(t6)
 
@@ -653,7 +686,7 @@ class CheckTool():
                             if "(" in t5:
                                 xn1 = 1
                                 xn2 = 1
-                            elif "C" in t5 or "T" in t5:
+                            elif "C" in t5 or "T" in t5 or "組" in t5:
                                 xn1 = 0
                                 xn2 = 1
                             else:
@@ -1623,16 +1656,16 @@ if __name__ == '__main__':
     CT = CheckTool()
 
     stpage = 1
-    edpage = 0
+    edpage = 5
     limit = 0.90
-    # filename = "03 【東大阪】 構造計算書（住棟）のコピー2.pdf"
-    filename = "03 【東大阪】 構造計算書（住棟）.pdf"
-    # filename = "SS7構造計算書（抜粋）.pdf"
+    # # filename = "03 【東大阪】 構造計算書（住棟）のコピー2.pdf"
+    filename = "06 茨木市中学校給食センター 構造計算書.pdf"
+    # # filename = "SS7構造計算書（抜粋）.pdf"
 
-    # stpage = 100
-    # edpage = 0
-    # limit = 0.70
-    # filename = "サンプル計算書(1)a.pdf"
+    # stpage = 170
+    # edpage = 200
+    # limit = 0.90
+    # filename = "サンプル計算書(1).pdf"
 
     # stpage = 1
     # edpage = 0
