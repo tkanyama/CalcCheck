@@ -847,7 +847,7 @@ class CheckTool():
                     # fword = "σc/fc"
                     fword1 = "σc/fc"
                     fword2 = "σ/fc"
-                    fword3 = "σ/f"
+                    fword3 = "検定比"
                     for line in CharLines:
                         i += 1
                         t3 = line[0]
@@ -989,7 +989,7 @@ class CheckTool():
                     kmode = False
                     fword1 = "σb/fb"
                     fword2 = "σ/fb"
-                    fword3 = "σ/f"
+                    fword3 = "検定比"
                     for line in CharLines:
                         i += 1
                         t3 = line[0]
@@ -1192,43 +1192,49 @@ class CheckTool():
                     # lines =t1.splitlines()
                     i = -1
                     kmode = False
+                    fword1 = "Nt/Nat"
+                    fword2 = "σt/ft"
+                    fword3 = "検定比"
                     for line in CharLines:
                         i += 1
                         t3 = line[0]
-                        fword = "Nt/Nat"
                         if not kmode :
-                            if fword in t3 : # 最初の「検定比」が現れたら「kmode」をTrue
+                            if fword1 in t3 or fword2 in t3 or fword3 in t3 : # 最初のfwordが現れたら「kmode」をTrue
                                 kmode = True
-                                # 「検定比」の下にある数値だけを検出するためのX座標を取得
-                                n = t3.index(fword)
+                                if fword1 in t3:
+                                    fword = fword1
+                                elif fword2 in t3:
+                                    fword = fword2
+                                elif fword3 in t3:
+                                    fword = fword3
+                                #end i
+                                # fwordより右側にある数値だけを検出するためのX座標を取得
+                                n = t3.index(fword)  # + len(fword)
                                 c1 = CharData[i][n]
                                 zx0 = c1[1]
-                                c2 = CharData[i][n+len(fword)-1]
-                                zx1 = c2[2]
-                                # print(c1[0],c2[0], zx0, zx1)
-                        else:
+                            #end if
+                        if kmode :
                             CharLine = CharData[i] # １行文のデータを読み込む
                             t4 = ""
                         
                             for char in CharLine:
-                                # kmodeの時には「検定比」の下にある数値だけを検出する。
+                                # kfwordより右側にある数値だけを検出する。
                                 if char[1]>=zx0 :
                                     t4 += char[0]
-                                #end if
-                            #next
-                            if t4 == "" :
-                                kmode = False
-                            #end if
 
-                            if isfloat(t4): # 切り取った文字が数値の場合の処理
+                            t4 = t4.replace(fword,"") 
+                            #next
+                            if t4 == "": # 
+                                kmode = False
+                            else:
                                 st = 0
                                 w0 = t4.split()
-                                if len(w0)>1:
+                                if len(w0)>=1:
                                     for w1 in w0:
                                         w2 = w1.replace(" ","")
                                         if isfloat(w2): # 切り取った文字が数値の場合の処理
                                             a = float(w2)
-                                            if a>=limit3 and a<1.0:
+                                            if a>=limit1 and a<1.0:
                                                 # 数値がlimit以上の場合はデータに登録
                                                 n = t3.find(w2,st)   # 数値の文字位置を検索
                                                 xxx0 = CharLine[n][1]
@@ -1246,16 +1252,12 @@ class CheckTool():
                                                 print('val={:.2f}'.format(val))
                                             #end if
                                         #end if
-                                        
                                         st = t3.find(w1,st)+ len(w1)
                                     #next
                                 #end if
                             #end if
                         #end if
-                    #next
-            #end if
-        #end if
-        
+    
         #==========================================================================
         #  検出結果を出力する
         return pageFlag, ResultData
@@ -1656,12 +1658,16 @@ if __name__ == '__main__':
 
     CT = CheckTool()
 
-    stpage = 1
-    edpage = 5
+    stpage = 296
+    edpage = 0
     limit = 0.90
     # # filename = "03 【東大阪】 構造計算書（住棟）のコピー2.pdf"
-    filename = "06 茨木市中学校給食センター 構造計算書.pdf"
+    # filename = "06 茨木市中学校給食センター 構造計算書.pdf"
+    filename = "【検定比チェック】230086.pdf"
     # # filename = "SS7構造計算書（抜粋）.pdf"
+
+
+
 
     # stpage = 170
     # edpage = 200
